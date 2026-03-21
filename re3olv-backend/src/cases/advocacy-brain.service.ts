@@ -1,15 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { CasesService } from './cases.service.js';
+import { PrismaClient } from '../../generated/prisma/client.js';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 
 @Injectable()
 export class AdvocacyBrainService {
   private readonly logger = new Logger(AdvocacyBrainService.name);
   private genAI: GoogleGenerativeAI;
+  private prisma: PrismaClient;
 
   constructor(private casesService: CasesService) {
     const apiKey = process.env.GEMINI_API_KEY || '';
     this.genAI = new GoogleGenerativeAI(apiKey);
+    
+    const adapter = new PrismaBetterSqlite3({
+      url: 'file:./dev.db',
+    });
+    this.prisma = new PrismaClient({ adapter });
   }
 
   async processHardshipStory(caseId: string, story: string) {
@@ -40,7 +48,7 @@ export class AdvocacyBrainService {
       this.logger.log(`AI Text Output: ${text}`);
 
       let analysis = { hardshipDetected: false, reason: '' };
-      let novaResponse = "I'm sorry to hear that, but I couldn't detect a specific qualifying hardship in your story. If you have more details about job loss or illness, please let me know.";
+      let novaResponse = "I'm sorry to hear that, but I couldn't detect a specific qualifying hardship in your story. If you have more details about job love or illness, please let me know.";
       
       const caseData = await this.casesService.findOne(caseId);
       const isVerified = caseData?.isVerified || false;

@@ -106,15 +106,15 @@ export default function CaseDetailPage() {
   if (loading) return <div className="p-12 text-center font-mono">Loading Case Analysis...</div>;
   if (!caseData) return <div className="p-12 text-center">Case not found.</div>;
 
-  const totalExternalDebt = caseData.externalDebts.reduce((acc, debt) => acc + debt.amount, 0);
+  const totalExternalDebt = (caseData.externalDebts || []).reduce((acc, debt) => acc + debt.amount, 0);
   const globalDebt = totalExternalDebt + caseData.totalAmount;
   const consolidatedSettlement = globalDebt * (1 - discount / 100);
   const monthlyConsolidated = consolidatedSettlement / 24;
 
-  const totalIncome = caseData.incomes.reduce((acc, inc) => acc + inc.amount, 0);
-  const totalExpenses = caseData.expenses.reduce((acc, exp) => acc + exp.amount, 0);
+  const totalIncome = (caseData.incomes || []).reduce((acc, inc) => acc + inc.amount, 0);
+  const totalExpenses = (caseData.expenses || []).reduce((acc, exp) => acc + exp.amount, 0);
   const netCashFlow = totalIncome - totalExpenses;
-  const entertainmentExpense = caseData.expenses.filter(e => e.category === 'ENTERTAINMENT').reduce((acc, exp) => acc + exp.amount, 0);
+  const entertainmentExpense = (caseData.expenses || []).filter(e => e.category === 'ENTERTAINMENT').reduce((acc, exp) => acc + exp.amount, 0);
   const entertainmentRatio = totalIncome > 0 ? (entertainmentExpense / totalIncome) * 100 : 0;
 
   return (
@@ -331,7 +331,7 @@ export default function CaseDetailPage() {
                   <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 text-center">
                     <Landmark className="mx-auto text-indigo-600 mb-2" size={24} />
                     <p className="text-xs font-bold text-slate-400 uppercase">Creditors</p>
-                    <p className="text-2xl font-black text-slate-900">{caseData.externalDebts.length + 1}</p>
+                    <p className="text-2xl font-black text-slate-900">{(caseData.externalDebts || []).length + 1}</p>
                   </div>
                 </div>
 
@@ -409,7 +409,7 @@ export default function CaseDetailPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {caseData.externalDebts.map((debt) => (
+                        {(caseData.externalDebts || []).map((debt) => (
                           <TableRow key={debt.id}>
                             <TableCell className="px-4 py-4 font-bold text-gray-900">{debt.creditorName}</TableCell>
                             <TableCell className="py-4 text-xs font-medium text-slate-500 uppercase tracking-tighter">{debt.type}</TableCell>
@@ -433,7 +433,7 @@ export default function CaseDetailPage() {
 
           <div className="space-y-8">
             <Card className="border-0 shadow-2xl rounded-3xl bg-indigo-900 text-white overflow-hidden relative">
-              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+              <div className="absolute inset-0 bg-slate-900/50 opacity-10" />
               <CardHeader className="relative z-10">
                 <div className="bg-white/10 w-fit p-3 rounded-2xl mb-4">
                   <Calculator size={24} className="text-indigo-300" />
@@ -480,10 +480,10 @@ export default function CaseDetailPage() {
                 <p className="text-[10px] font-bold text-indigo-300 uppercase leading-tight">
                   This models a full-portfolio discharge. Final terms subject to creditor bipartite approval.
                 </p>
-              </CardContent>
-              </Card>
+              </CardFooter>
+            </Card>
 
-              <Card className="border-0 shadow-xl rounded-3xl bg-white overflow-hidden border border-red-100">
+            <Card className="border-0 shadow-xl rounded-3xl bg-white overflow-hidden border border-red-100">
               <CardHeader className="bg-red-50 border-b border-red-100">
                 <CardTitle className="text-red-900 text-sm font-black uppercase tracking-widest flex items-center gap-2">
                   <ShieldAlert size={16} className="text-red-600" /> Institutional Data Protection
@@ -511,10 +511,10 @@ export default function CaseDetailPage() {
                   Erase Case Data
                 </Button>
               </CardContent>
-              </Card>
-              </div>
-              </div>
-              </div>
-              );
-              }
+            </Card>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

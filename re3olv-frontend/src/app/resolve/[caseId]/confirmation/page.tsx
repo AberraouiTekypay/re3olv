@@ -63,7 +63,7 @@ export default async function ConfirmationPage({ params }: { params: { caseId: s
                 <p className="text-sm text-indigo-500 uppercase tracking-widest font-black mb-1">Final Settlement Paid</p>
                 <p className="text-5xl font-black text-gray-900">${caseData.paidAmount?.toLocaleString()}</p>
                 <div className="mt-6 flex items-center justify-center gap-2 text-green-600 font-bold bg-green-50 py-2 px-4 rounded-xl inline-flex">
-                  <ShieldCheck size={18} /> Financial Freedom Restored
+                  <ShieldCheck size={18} className="text-green-600" /> Financial Freedom Restored
                 </div>
               </div>
               
