@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { SettlementSelector } from './SettlementSelector';
 import { AdvocacyShield } from './AdvocacyShield';
+import { fetchApi } from '@/lib/api-client';
 
 interface SettlementOption {
   id: string;
@@ -24,15 +25,11 @@ interface CaseData {
 }
 
 async function getCaseData(caseId: string): Promise<CaseData> {
-  const res = await fetch(`http://localhost:3001/api/cases/${caseId}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Failed to fetch case data');
-  return res.json();
+  return fetchApi<CaseData>(`/cases/${caseId}`, { cache: 'no-store' });
 }
 
 async function getSettlementOptions(caseId: string): Promise<SettlementOption[]> {
-  const res = await fetch(`http://localhost:3001/api/cases/${caseId}/options`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('Failed to fetch settlement options');
-  return res.json();
+  return fetchApi<SettlementOption[]>(`/cases/${caseId}/options`, { cache: 'no-store' });
 }
 
 export default async function ResolvePage({ params }: { params: { caseId: string } }) {

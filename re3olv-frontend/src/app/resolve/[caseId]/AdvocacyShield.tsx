@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Send, Sparkles, ShieldCheck, User, Bot, Loader2 } from 'lucide-react';
+import { fetchApi } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 interface Message {
   role: 'nova' | 'user';
@@ -44,15 +46,10 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
     setLoading(true);
 
     try {
-      const res = await fetch(`http://localhost:3001/api/cases/${caseId}/chat`, {
+      const analysis = await fetchApi<any>(`/cases/${caseId}/chat`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ story: userMessage }),
       });
-
-      if (!res.ok) throw new Error('Failed to process story');
-      
-      const analysis = await res.json();
       
       if (analysis.hardshipDetected) {
         setMessages(prev => [...prev, { 
@@ -61,6 +58,7 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
         }]);
         setSuccess(true);
         setAiReason(analysis.reason);
+        toast.success('Advocacy Shield Activated!');
         router.refresh();
       } else {
         setMessages(prev => [...prev, { 
@@ -68,9 +66,11 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
           content: "I'm sorry to hear that, but I couldn't detect a specific qualifying hardship in your story. If you have more details about job loss or illness, please let me know." 
         }]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      setMessages(prev => [...prev, { role: 'nova', content: "I'm having trouble connecting right now. Please try again in a moment." }]);
+      const errorMsg = error.message || 'Error processing your story';
+      toast.error(errorMsg);
+      setMessages(prev => [...prev, { role: 'nova', content: `Sorry, I encountered an error: ${errorMsg}` }]);
     } finally {
       setLoading(false);
     }
@@ -80,7 +80,7 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
     return (
       <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-[2px] rounded-3xl mb-12 shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-1000">
         <div className="bg-white rounded-[22px] p-8">
-          <div className="flex items-start gap-8">
+          <div className="flex items-start gap-6">
             <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-5 rounded-2xl shadow-xl shadow-indigo-200 shrink-0">
               <ShieldCheck className="text-white" size={48} />
             </div>

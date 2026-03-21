@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BadgeCheck, CreditCard, CalendarDays, CheckCircle2 } from 'lucide-react';
+import { BadgeCheck, CreditCard, CalendarDays } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { fetchApi } from '@/lib/api-client';
 
 interface SettlementOption {
   id: string;
@@ -30,15 +31,10 @@ export function SettlementSelector({ caseId, options, initialStatus }: { caseId:
   const handleSelectPlan = async (optionId: string) => {
     setLoading(optionId);
     try {
-      const res = await fetch(`http://localhost:3001/api/cases/${caseId}/resolve`, {
+      await fetchApi(`/cases/${caseId}/resolve`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ optionId }),
       });
-
-      if (!res.ok) {
-        throw new Error('Failed to resolve case');
-      }
 
       router.push(`/resolve/${caseId}/confirmation`);
     } catch (error) {

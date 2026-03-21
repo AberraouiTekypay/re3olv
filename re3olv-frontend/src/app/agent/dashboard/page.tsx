@@ -7,6 +7,7 @@ import { ShieldAlert, ShieldCheck, PieChart, LayoutDashboard, Download, Trending
 import { Button } from '@/components/ui/button';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import { fetchApi } from '@/lib/api-client';
 
 interface CaseData {
   id: string;
@@ -41,12 +42,10 @@ export default function AgentDashboardPage() {
 
   const fetchData = async () => {
     try {
-      const [casesRes, statsRes] = await Promise.all([
-        fetch('http://localhost:3001/api/cases'),
-        fetch('http://localhost:3001/api/cases/analytics/roi')
+      const [casesData, statsData] = await Promise.all([
+        fetchApi<CaseData[]>('/cases'),
+        fetchApi<ROIStats>('/cases/analytics/roi')
       ]);
-      const casesData = await casesRes.json();
-      const statsData = await statsRes.json();
       setCases(casesData);
       setStats(statsData);
     } catch (error) {
