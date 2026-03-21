@@ -27,6 +27,8 @@ export class CasesService {
         actionLogs: { orderBy: { createdAt: 'desc' } },
         chatMessages: { orderBy: { createdAt: 'asc' } },
         externalDebts: true,
+        incomes: true,
+        expenses: true,
       },
     });
   }

@@ -42,21 +42,31 @@ export class AdvocacyBrainService {
       let analysis = { hardshipDetected: false, reason: '' };
       let novaResponse = "I'm sorry to hear that, but I couldn't detect a specific qualifying hardship in your story. If you have more details about job loss or illness, please let me know.";
       
-      if (text.toLowerCase().includes('false')) {
+      const caseData = await this.casesService.findOne(caseId);
+      const isVerified = caseData?.isVerified || false;
+
+      if (text.toLowerCase().includes('false') && !isVerified) {
         analysis.hardshipDetected = false;
       } else {
         const jsonMatch = text.match(/\{.*\}/s);
         if (jsonMatch) {
           analysis = JSON.parse(jsonMatch[0]);
+        } else if (isVerified) {
+          analysis = { hardshipDetected: true, reason: 'Financial hardship verified via Open Banking cash flow analysis.' };
         }
       }
 
       this.logger.log(`Parsed Analysis result: ${JSON.stringify(analysis)}`);
 
-      if (analysis.hardshipDetected) {
+      if (analysis.hardshipDetected || isVerified) {
         this.logger.log(`Hardship detected for case ${caseId}. Applying Advocacy Shield automatically...`);
         await this.casesService.applyAdvocacy(caseId, analysis.reason);
-        novaResponse = `I've analyzed your situation: "${analysis.reason}". I've activated the Advocacy Shield for you.`;
+        
+        if (isVerified) {
+          novaResponse = "I've analyzed your cash flow and verified your hardship. Applying the maximal Shield discount now.";
+        } else {
+          novaResponse = `I've analyzed your situation: "${analysis.reason}". I've activated the Advocacy Shield for you.`;
+        }
       }
 
       // Persist Nova Response

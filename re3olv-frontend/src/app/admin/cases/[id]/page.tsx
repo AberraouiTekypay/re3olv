@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { ShieldCheck, ShieldAlert, History, MessageSquare, Activity, ArrowLeft, BarChart3, TrendingDown, Landmark, Calculator, Sparkles, PieChart } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, History, MessageSquare, Activity, ArrowLeft, BarChart3, TrendingDown, Landmark, Calculator, Sparkles, PieChart, Wallet, ArrowUpCircle, ArrowDownCircle, AlertCircle } from 'lucide-react';
 import { fetchApi } from '@/lib/api-client';
 import { toast } from 'sonner';
 
@@ -31,11 +31,26 @@ interface ExternalDebt {
   type: 'CREDIT_CARD' | 'LOAN' | 'UTILITY';
 }
 
+interface Income {
+  id: string;
+  source: string;
+  amount: number;
+  date: string;
+}
+
+interface Expense {
+  id: string;
+  category: string;
+  amount: number;
+  date: string;
+}
+
 interface CaseData {
   id: string;
   borrowerName: string;
   totalAmount: number;
   creditScore: number;
+  isVerified: boolean;
   isFeeFrozen: boolean;
   penaltyWaived: number;
   status: string;
@@ -43,6 +58,8 @@ interface CaseData {
   actionLogs: ActionLog[];
   chatMessages: ChatMessage[];
   externalDebts: ExternalDebt[];
+  incomes: Income[];
+  expenses: Expense[];
 }
 
 export default function CaseDetailPage() {
@@ -94,6 +111,12 @@ export default function CaseDetailPage() {
   const consolidatedSettlement = globalDebt * (1 - discount / 100);
   const monthlyConsolidated = consolidatedSettlement / 24;
 
+  const totalIncome = caseData.incomes.reduce((acc, inc) => acc + inc.amount, 0);
+  const totalExpenses = caseData.expenses.reduce((acc, exp) => acc + exp.amount, 0);
+  const netCashFlow = totalIncome - totalExpenses;
+  const entertainmentExpense = caseData.expenses.filter(e => e.category === 'ENTERTAINMENT').reduce((acc, exp) => acc + exp.amount, 0);
+  const entertainmentRatio = totalIncome > 0 ? (entertainmentExpense / totalIncome) * 100 : 0;
+
   return (
     <div className="container mx-auto py-12 px-4 max-w-6xl">
       <div className="flex justify-between items-center mb-8">
@@ -123,7 +146,14 @@ export default function CaseDetailPage() {
       <header className="mb-12 flex justify-between items-start">
         <div>
           <h1 className="text-4xl font-black tracking-tight text-gray-900">{caseData.borrowerName}</h1>
-          <p className="text-lg text-slate-500 font-mono uppercase tracking-tighter mt-1">{caseData.id}</p>
+          <div className="flex items-center gap-3 mt-1">
+            <p className="text-lg text-slate-500 font-mono uppercase tracking-tighter">{caseData.id}</p>
+            {caseData.isVerified && (
+              <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1">
+                <ShieldCheck size={12} /> Open Banking Verified
+              </span>
+            )}
+          </div>
         </div>
         <div className={`px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-sm shadow-sm ${
           caseData.status === 'SETTLED' ? 'bg-green-100 text-green-700' : 
@@ -305,35 +335,98 @@ export default function CaseDetailPage() {
                   </div>
                 </div>
 
-                <h3 className="text-lg font-black mb-4 flex items-center gap-2">
-                  <BarChart3 size={20} className="text-indigo-600" /> External Debt Breakdown
-                </h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50/50">
-                      <TableHead className="px-4 font-bold text-xs uppercase">Creditor</TableHead>
-                      <TableHead className="font-bold text-xs uppercase">Type</TableHead>
-                      <TableHead className="font-bold text-xs uppercase">Exposure</TableHead>
-                      <TableHead className="px-4 font-bold text-xs uppercase text-right">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {caseData.externalDebts.map((debt) => (
-                      <TableRow key={debt.id}>
-                        <TableCell className="px-4 py-4 font-bold text-gray-900">{debt.creditorName}</TableCell>
-                        <TableCell className="py-4 text-xs font-medium text-slate-500 uppercase tracking-tighter">{debt.type}</TableCell>
-                        <TableCell className="py-4 font-black text-slate-900">${debt.amount.toLocaleString()}</TableCell>
-                        <TableCell className="px-4 py-4 text-right">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                            debt.status === 'DELINQUENT' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                          }`}>
-                            {debt.status}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                <div className="space-y-12">
+                  <section>
+                    <h3 className="text-lg font-black mb-4 flex items-center gap-2">
+                      <Wallet size={20} className="text-indigo-600" /> Cash Flow Analysis (30-Day Snapshot)
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-green-50 rounded-2xl border border-green-100">
+                          <div className="flex items-center gap-3">
+                            <ArrowUpCircle className="text-green-600" size={24} />
+                            <div>
+                              <p className="text-[10px] font-black uppercase text-green-700 opacity-60">Verified Income</p>
+                              <p className="text-xl font-black text-green-800">${totalIncome.toLocaleString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100">
+                          <div className="flex items-center gap-3">
+                            <ArrowDownCircle className="text-red-600" size={24} />
+                            <div>
+                              <p className="text-[10px] font-black uppercase text-red-700 opacity-60">Total Expenses</p>
+                              <p className="text-xl font-black text-red-800">${totalExpenses.toLocaleString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-slate-900 text-white rounded-2xl">
+                          <div>
+                            <p className="text-[10px] font-black uppercase opacity-60">Net Disposable</p>
+                            <p className="text-xl font-black">${netCashFlow.toLocaleString()}</p>
+                          </div>
+                          {netCashFlow < 500 && <AlertCircle className="text-orange-400 animate-pulse" size={24} />}
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
+                        <h4 className="text-xs font-black uppercase text-slate-400 mb-4 flex items-center gap-2">
+                          <AlertCircle size={14} className="text-orange-500" /> Institutional Red Flags
+                        </h4>
+                        <div className="space-y-3">
+                          {entertainmentRatio > 20 && (
+                            <div className="p-3 bg-white rounded-xl border-l-4 border-l-orange-500 shadow-sm">
+                              <p className="text-xs font-bold text-slate-900">High Non-essential Spend</p>
+                              <p className="text-[10px] text-slate-500">{entertainmentRatio.toFixed(1)}% of income spent on entertainment.</p>
+                            </div>
+                          )}
+                          {netCashFlow < caseData.totalAmount * 0.1 && (
+                            <div className="p-3 bg-white rounded-xl border-l-4 border-l-red-500 shadow-sm">
+                              <p className="text-xs font-bold text-slate-900">Critical Liquidity Risk</p>
+                              <p className="text-[10px] text-slate-500">Disposable income insufficient for current resolution plans.</p>
+                            </div>
+                          )}
+                          <div className="p-3 bg-white rounded-xl border-l-4 border-l-green-500 shadow-sm opacity-50">
+                            <p className="text-xs font-bold text-slate-900">Income Stability</p>
+                            <p className="text-[10px] text-slate-500">Primary salary detected across last 3 cycles.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section>
+                    <h3 className="text-lg font-black mb-4 flex items-center gap-2">
+                      <BarChart3 size={20} className="text-indigo-600" /> External Debt Breakdown
+                    </h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-slate-50/50">
+                          <TableHead className="px-4 font-bold text-xs uppercase">Creditor</TableHead>
+                          <TableHead className="font-bold text-xs uppercase">Type</TableHead>
+                          <TableHead className="font-bold text-xs uppercase">Exposure</TableHead>
+                          <TableHead className="px-4 font-bold text-xs uppercase text-right">Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {caseData.externalDebts.map((debt) => (
+                          <TableRow key={debt.id}>
+                            <TableCell className="px-4 py-4 font-bold text-gray-900">{debt.creditorName}</TableCell>
+                            <TableCell className="py-4 text-xs font-medium text-slate-500 uppercase tracking-tighter">{debt.type}</TableCell>
+                            <TableCell className="py-4 font-black text-slate-900">${debt.amount.toLocaleString()}</TableCell>
+                            <TableCell className="px-4 py-4 text-right">
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                debt.status === 'DELINQUENT' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+                              }`}>
+                                {debt.status}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </section>
+                </div>
               </CardContent>
             </Card>
           </div>

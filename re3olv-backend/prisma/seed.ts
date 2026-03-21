@@ -94,13 +94,17 @@ async function main() {
   // 6. Hardship Advocacy Case (Pre-applied)
   const robertCase = await prisma.case.upsert({
     where: { id: 'case-06-hardship' },
-    update: { organizationId: 'default-org' },
+    update: { 
+      organizationId: 'default-org',
+      isVerified: true,
+    },
     create: {
       id: 'case-06-hardship',
       borrowerName: 'Robert Johnson',
       principalAmount: 4500.00,
       totalAmount: 4500.00,
       creditScore: 580,
+      isVerified: true,
       isFeeFrozen: true,
       penaltyWaived: 250.00,
       hardshipReason: 'Medical illness verified by Nova.',
@@ -108,6 +112,42 @@ async function main() {
       organizationId: 'default-org',
     },
   });
+
+  // Mock Income for Robert
+  await prisma.income.upsert({
+    where: { id: 'income-01' },
+    update: {},
+    create: {
+      id: 'income-01',
+      caseId: robertCase.id,
+      source: 'Primary Employment',
+      amount: 2200.00,
+      date: new Date(),
+    },
+  });
+
+  // Mock Expenses for Robert
+  const expenseCategories = [
+    { cat: 'HOUSING', amt: 1200 },
+    { cat: 'FOOD', amt: 400 },
+    { cat: 'TRANSPORT', amt: 300 },
+    { cat: 'ENTERTAINMENT', amt: 500 }, // High non-essential
+    { cat: 'OTHER', amt: 200 },
+  ];
+
+  for (let i = 0; i < expenseCategories.length; i++) {
+    await prisma.expense.upsert({
+      where: { id: `expense-robert-${i}` },
+      update: {},
+      create: {
+        id: `expense-robert-${i}`,
+        caseId: robertCase.id,
+        category: expenseCategories[i].cat,
+        amount: expenseCategories[i].amt,
+        date: new Date(),
+      },
+    });
+  }
 
   // External debts for Robert
   await prisma.externalDebt.upsert({
