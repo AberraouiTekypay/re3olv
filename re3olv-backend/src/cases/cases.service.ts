@@ -29,7 +29,8 @@ export class CasesService {
     const caseData = await this.findOne(caseId);
     if (!caseData) return null;
 
-    const total = caseData.totalAmount;
+    const total = caseData.totalAmount - (caseData.penaltyWaived || 0);
+    const isFrozen = caseData.isFeeFrozen;
 
     return [
       {
@@ -38,7 +39,7 @@ export class CasesService {
         description: 'Pay a discounted amount in one single payment.',
         amount: total * 0.6,
         type: 'ONE_TIME',
-        savings: total * 0.4,
+        savings: (caseData.totalAmount - (total * 0.6)),
       },
       {
         id: 'short-term',
@@ -52,11 +53,11 @@ export class CasesService {
       {
         id: 'long-term',
         name: 'Long-term Plan',
-        description: 'Pay over 12 months with a small interest.',
-        amount: total * 1.1,
+        description: isFrozen ? 'Pay over 12 months with 0% interest (Advocacy Shield).' : 'Pay over 12 months with a small interest.',
+        amount: isFrozen ? total : total * 1.1,
         type: 'INSTALLMENTS',
         installments: 12,
-        monthlyPayment: (total * 1.1) / 12,
+        monthlyPayment: (isFrozen ? total : total * 1.1) / 12,
       },
     ];
   }

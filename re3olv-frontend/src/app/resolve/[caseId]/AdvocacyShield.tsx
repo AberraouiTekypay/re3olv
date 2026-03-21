@@ -10,12 +10,14 @@ interface AdvocacyShieldProps {
   caseId: string;
   isFeeFrozen: boolean;
   penaltyWaived: number;
+  hardshipReason: string | null;
 }
 
-export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived }: AdvocacyShieldProps) {
+export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipReason }: AdvocacyShieldProps) {
   const [loading, setLoading] = useState(false);
   const [story, setStory] = useState('');
   const [success, setSuccess] = useState(isFeeFrozen);
+  const [aiReason, setAiReason] = useState(hardshipReason);
   const router = useRouter();
 
   const handleSendMessage = async () => {
@@ -32,6 +34,7 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived }: AdvocacyS
       const analysis = await res.json();
       if (analysis.hardshipDetected) {
         setSuccess(true);
+        setAiReason(analysis.reason);
         router.refresh();
       } else {
         alert('Advocacy not triggered. Please provide more details if you are facing hardship.');
@@ -46,13 +49,20 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived }: AdvocacyS
 
   if (success) {
     return (
-      <div className="bg-green-50 border border-green-200 text-green-800 p-6 rounded-2xl mb-12 flex items-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        <div className="bg-green-100 p-3 rounded-full">
-          <ShieldCheck className="text-green-600" size={32} />
-        </div>
-        <div>
-          <h3 className="font-bold text-xl">Advocacy Shield Active</h3>
-          <p className="text-green-700">The bank has waived your fees. ${penaltyWaived.toLocaleString()} in penalties have been waived.</p>
+      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 text-indigo-900 p-8 rounded-3xl mb-12 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="flex items-start gap-6">
+          <div className="bg-indigo-600 p-4 rounded-2xl shadow-lg shadow-indigo-200 shrink-0">
+            <ShieldCheck className="text-white" size={40} />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-2xl tracking-tight mb-2">Advocacy Shield Active</h3>
+            <p className="text-indigo-700 text-lg mb-4">
+              Nova detected: <span className="italic font-medium text-indigo-900">"{aiReason}"</span>
+            </p>
+            <div className="inline-flex items-center gap-2 bg-white/60 px-4 py-2 rounded-full border border-indigo-100 font-semibold text-indigo-800">
+              <Sparkles size={16} className="text-indigo-500" /> ${penaltyWaived.toLocaleString()} in penalties waived & 0% interest applied
+            </div>
+          </div>
         </div>
       </div>
     );

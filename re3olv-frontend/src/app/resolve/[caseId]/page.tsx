@@ -20,6 +20,7 @@ interface CaseData {
   status: string;
   isFeeFrozen: boolean;
   penaltyWaived: number;
+  hardshipReason: string | null;
 }
 
 async function getCaseData(caseId: string): Promise<CaseData> {
@@ -54,7 +55,12 @@ export default async function ResolvePage({ params }: { params: { caseId: string
           </div>
         </header>
 
-        <AdvocacyShield caseId={caseId} isFeeFrozen={caseData.isFeeFrozen} penaltyWaived={caseData.penaltyWaived} />
+        <AdvocacyShield 
+          caseId={caseId} 
+          isFeeFrozen={caseData.isFeeFrozen} 
+          penaltyWaived={caseData.penaltyWaived}
+          hardshipReason={caseData.hardshipReason}
+        />
 
         <SettlementSelector caseId={caseId} options={options} initialStatus={caseData.status} />
 
