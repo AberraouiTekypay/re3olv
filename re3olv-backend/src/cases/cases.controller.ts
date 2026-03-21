@@ -1,12 +1,14 @@
-import { Controller, Get, Post, Body, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, NotFoundException, Query } from '@nestjs/common';
 import { CasesService } from './cases.service.js';
 import { AdvocacyBrainService } from './advocacy-brain.service.js';
+import { LinkService } from './link.service.js';
 
 @Controller('cases')
 export class CasesController {
   constructor(
     private readonly casesService: CasesService,
     private readonly advocacyBrainService: AdvocacyBrainService,
+    private readonly linkService: LinkService,
   ) {}
 
   @Get()
@@ -21,6 +23,21 @@ export class CasesController {
       throw new NotFoundException(`Case with ID ${id} not found`);
     }
     return caseData;
+  }
+
+  @Get(':id/magic-link')
+  async generateMagicLink(@Param('id') id: string) {
+    return this.linkService.generateMagicLink(id);
+  }
+
+  @Post(':id/view')
+  async trackView(@Param('id') id: string, @Query('token') token?: string) {
+    if (token) {
+      const isValid = await this.linkService.validateToken(id, token);
+      if (!isValid) return { success: false, message: 'Invalid token' };
+    }
+    await this.casesService.trackView(id);
+    return { success: true };
   }
 
   @Get(':id/options')

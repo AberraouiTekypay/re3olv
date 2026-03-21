@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { SettlementSelector } from './SettlementSelector';
 import { AdvocacyShield } from './AdvocacyShield';
+import { ViewTracker } from './ViewTracker';
 import { fetchApi } from '@/lib/api-client';
 
 interface SettlementOption {
@@ -41,6 +42,7 @@ export default async function ResolvePage({ params }: { params: { caseId: string
 
     return (
       <div className="container mx-auto py-12 px-4 max-w-5xl">
+        <ViewTracker caseId={caseId} />
         <header className="mb-12 text-center">
           <h1 className="text-4xl font-bold tracking-tight mb-4">Resolve Your Debt</h1>
           <p className="text-lg text-muted-foreground">

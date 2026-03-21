@@ -23,6 +23,9 @@ model Case {
   status           String   @default("OPEN")
   selectedOptionId String?
   hardshipReason   String?
+  magicToken       String?  @unique
+  viewCount        Int      @default(0)
+  lastViewedAt     DateTime?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }

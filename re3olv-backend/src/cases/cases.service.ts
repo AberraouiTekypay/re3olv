@@ -82,6 +82,16 @@ export class CasesService {
     });
   }
 
+  async trackView(caseId: string) {
+    return this.prisma.case.update({
+      where: { id: caseId },
+      data: {
+        viewCount: { increment: 1 },
+        lastViewedAt: new Date(),
+      },
+    });
+  }
+
   async startAdvocacy(caseId: string) {
     console.log(`Starting advocacy for case ${caseId}`);
     return this.prisma.case.update({

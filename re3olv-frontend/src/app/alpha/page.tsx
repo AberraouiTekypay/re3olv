@@ -4,14 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { ExternalLink, ShieldCheck, User as UserIcon, Link as LinkIcon, Copy, MessageSquare } from 'lucide-react';
 import { fetchApi } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 interface CaseData {
   id: string;
   borrowerName: string;
   totalAmount: number;
   status: string;
+  viewCount: number;
+  lastViewedAt: string | null;
 }
 
 export default function AlphaLaunchpad() {
@@ -19,16 +22,30 @@ export default function AlphaLaunchpad() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchApi<CaseData[]>('/cases')
-      .then(data => {
-        setCases(data);
-        setLoading(false);
-      })
-      .catch(error => {
-        console.error('Failed to fetch cases', error);
-        setLoading(false);
-      });
+    fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      const data = await fetchApi<CaseData[]>('/cases');
+      setCases(data);
+    } catch (error) {
+      console.error('Failed to fetch cases', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const generateAndCopyNudge = async (c: CaseData) => {
+    try {
+      const { url } = await fetchApi<{ url: string }>(`/cases/${c.id}/magic-link`);
+      const message = `Hi ${c.borrowerName}, I'm Nova, your RE3OLV Advocate. I've been reviewing your account with [MFI] and I think I can get some of your late fees waived. Can we chat? ${url}`;
+      await navigator.clipboard.writeText(message);
+      toast.success(`WhatsApp nudge copied for ${c.borrowerName}!`);
+    } catch (error) {
+      toast.error('Failed to generate magic link');
+    }
+  };
 
   if (loading) return <div className="p-12 text-center font-mono">Loading Launchpad...</div>;
 
@@ -54,9 +71,9 @@ export default function AlphaLaunchpad() {
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
-                <TableHead className="px-10 py-5 font-bold text-slate-700 uppercase tracking-wider text-xs">Case ID</TableHead>
-                <TableHead className="py-5 font-bold text-slate-700 uppercase tracking-wider text-xs">Borrower</TableHead>
+                <TableHead className="px-10 py-5 font-bold text-slate-700 uppercase tracking-wider text-xs">Borrower</TableHead>
                 <TableHead className="py-5 font-bold text-slate-700 uppercase tracking-wider text-xs">Total Debt</TableHead>
+                <TableHead className="py-5 font-bold text-slate-700 uppercase tracking-wider text-xs">Tracking</TableHead>
                 <TableHead className="py-5 font-bold text-slate-700 uppercase tracking-wider text-xs">Status</TableHead>
                 <TableHead className="px-10 py-5 font-bold text-slate-700 uppercase tracking-wider text-xs text-right">Actions</TableHead>
               </TableRow>
@@ -64,12 +81,29 @@ export default function AlphaLaunchpad() {
             <TableBody>
               {cases.map((c) => (
                 <TableRow key={c.id} className="hover:bg-indigo-50/50 transition-colors">
-                  <TableCell className="px-10 py-6 font-mono text-xs text-indigo-600 font-bold">{c.id.slice(0, 18)}...</TableCell>
-                  <TableCell className="py-6 font-bold text-gray-900">{c.borrowerName}</TableCell>
+                  <TableCell className="px-10 py-6">
+                    <p className="font-bold text-gray-900">{c.borrowerName}</p>
+                    <p className="font-mono text-[10px] text-slate-400 uppercase">{c.id.slice(0, 12)}</p>
+                  </TableCell>
                   <TableCell className="py-6 font-black text-indigo-700 text-lg">${c.totalAmount.toLocaleString()}</TableCell>
+                  <TableCell className="py-6">
+                    {c.viewCount > 0 ? (
+                      <div className="flex flex-col">
+                        <span className="text-green-600 font-bold flex items-center gap-1 text-xs">
+                          <ExternalLink size={12} /> {c.viewCount} Opens
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          {c.lastViewedAt ? new Date(c.lastViewedAt).toLocaleTimeString() : ''}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-slate-300 font-medium text-xs italic">Never Opened</span>
+                    )}
+                  </TableCell>
                   <TableCell className="py-6">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
                       c.status === 'RESOLVED' ? 'bg-green-100 text-green-700' : 
+                      c.status === 'SETTLED' ? 'bg-emerald-600 text-white' :
                       c.status === 'ADVOCACY' ? 'bg-purple-100 text-purple-700' : 
                       'bg-orange-100 text-orange-700'
                     }`}>
@@ -77,14 +111,17 @@ export default function AlphaLaunchpad() {
                     </span>
                   </TableCell>
                   <TableCell className="px-10 py-6 text-right flex justify-end gap-3">
-                    <Button variant="outline" size="sm" className="rounded-xl font-bold bg-white hover:bg-slate-50 border-2" asChild>
-                      <a href={`http://localhost:3000/resolve/${c.id}`} target="_blank" rel="noopener noreferrer">
-                        Portal <ExternalLink size={14} className="ml-2" />
-                      </a>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="rounded-xl font-bold border-indigo-100 text-indigo-600 hover:bg-indigo-50"
+                      onClick={() => generateAndCopyNudge(c)}
+                    >
+                      <MessageSquare size={14} className="mr-2" /> Nudge
                     </Button>
-                    <Button size="sm" className="rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100" asChild>
-                      <a href="/agent/dashboard">
-                        Agent View
+                    <Button variant="outline" size="sm" className="rounded-xl font-bold bg-white hover:bg-slate-50 border-2" asChild>
+                      <a href={`/resolve/${c.id}`} target="_blank" rel="noopener noreferrer">
+                        Portal <ExternalLink size={14} className="ml-2" />
                       </a>
                     </Button>
                   </TableCell>
