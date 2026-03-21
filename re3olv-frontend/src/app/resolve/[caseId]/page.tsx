@@ -63,8 +63,35 @@ export default async function ResolvePage({ params }: { params: { caseId: string
 
         <SettlementSelector caseId={caseId} options={options} initialStatus={caseData.status} />
 
-        <footer className="mt-16 text-center text-sm text-muted-foreground">
-          <p>Need help? Contact our support team at support@re3olv.com</p>
+        <footer className="mt-24 pt-12 border-t border-slate-100 pb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">
+            <div>
+              <h4 className="text-xs font-black uppercase text-slate-900 mb-4 tracking-widest">Regulatory Disclosures</h4>
+              <p className="text-[10px] text-slate-500 leading-relaxed">
+                RE3OLV is an institutional debt facilitator. All AI interactions with Nova are recorded for quality and compliance under FDCPA 2026 and GDPR standards.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-xs font-black uppercase text-slate-900 mb-4 tracking-widest">Legal Links</h4>
+              <ul className="space-y-2 text-[10px] font-bold text-slate-400">
+                <li><a href="#" className="hover:text-indigo-600">Terms of Service</a></li>
+                <li><a href="#" className="hover:text-indigo-600">Privacy & Data Consent</a></li>
+                <li><a href="#" className="hover:text-indigo-600 text-indigo-500 underline decoration-2">Right to Speak to a Human</a></li>
+              </ul>
+            </div>
+            <div className="flex flex-col items-center md:items-end justify-center">
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex items-center gap-3">
+                <Scale size={24} className="text-slate-400" />
+                <div className="text-right">
+                  <p className="text-[10px] font-black text-slate-900 uppercase">Institutional Grade</p>
+                  <p className="text-[9px] text-slate-400 font-bold">Audit-Ready Compliance</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="mt-12 text-center text-[9px] font-black text-slate-300 uppercase tracking-[0.3em]">
+            &copy; 2026 RE3OLV Technologies &middot; Institutional Debt Advocacy
+          </div>
         </footer>
       </div>
     );

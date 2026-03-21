@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, NotFoundException, Query, UseGuards, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, NotFoundException, Query, UseGuards, Req, Delete } from '@nestjs/common';
 import { CasesService } from './cases.service.js';
 import { AdvocacyBrainService } from './advocacy-brain.service.js';
 import { LinkService } from './link.service.js';
@@ -109,5 +109,11 @@ export class CasesController {
   @Roles('MANAGER')
   async getROI(@Req() req: Request) {
     return this.casesService.getROIStats(req['orgId']);
+  }
+
+  @Delete(':id')
+  @Roles('MANAGER')
+  async deleteCase(@Param('id') id: string) {
+    return this.casesService.deleteCaseData(id);
   }
 }

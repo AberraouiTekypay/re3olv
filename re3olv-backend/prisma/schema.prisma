@@ -53,8 +53,20 @@ model Case {
   externalDebts    ExternalDebt[]
   incomes          Income[]
   expenses         Expense[]
+  complianceAudits ComplianceAudit[]
+  encryptedData    String?  // For field-level encryption demo (Salary/Tokens)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+model ComplianceAudit {
+  id           String   @id @default(uuid())
+  caseId       String
+  case         Case     @relation(fields: [caseId], references: [id])
+  action       String   // e.g., SHIELD_ACTIVATION
+  reasoning    String   // AI Explainability Log
+  regulatoryRef String?  // e.g., FDCPA-2026-X
+  createdAt    DateTime @default(now())
 }
 
 model Income {

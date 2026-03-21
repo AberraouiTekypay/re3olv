@@ -62,6 +62,13 @@ export class AdvocacyBrainService {
         this.logger.log(`Hardship detected for case ${caseId}. Applying Advocacy Shield automatically...`);
         await this.casesService.applyAdvocacy(caseId, analysis.reason);
         
+        // Log for Compliance Audit
+        await this.casesService.logComplianceAction(
+          caseId, 
+          'SHIELD_ACTIVATION', 
+          `Hardship detected via AI reasoning: ${analysis.reason}. Verified: ${isVerified}`
+        );
+
         if (isVerified) {
           novaResponse = "I've analyzed your cash flow and verified your hardship. Applying the maximal Shield discount now.";
         } else {

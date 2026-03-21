@@ -480,11 +480,41 @@ export default function CaseDetailPage() {
                 <p className="text-[10px] font-bold text-indigo-300 uppercase leading-tight">
                   This models a full-portfolio discharge. Final terms subject to creditor bipartite approval.
                 </p>
-              </CardFooter>
-            </Card>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+              </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-xl rounded-3xl bg-white overflow-hidden border border-red-100">
+              <CardHeader className="bg-red-50 border-b border-red-100">
+                <CardTitle className="text-red-900 text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                  <ShieldAlert size={16} className="text-red-600" /> Institutional Data Protection
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Management of personal data under GDPR and institutional privacy policies.
+                </p>
+                <Button 
+                  variant="destructive"
+                  className="w-full h-12 rounded-2xl font-black uppercase tracking-tighter shadow-lg shadow-red-900/20"
+                  onClick={async () => {
+                    if (confirm('Are you sure? This will permanently erase all borrower data to comply with "Right to be Forgotten" (GDPR).')) {
+                      try {
+                        await fetchApi(`/cases/${id}`, { method: 'DELETE' });
+                        toast.success('Data erased successfully');
+                        router.push('/agent/dashboard');
+                      } catch (e) {
+                        toast.error('Only MANAGERS can perform data erasure');
+                      }
+                    }
+                  }}
+                >
+                  Erase Case Data
+                </Button>
+              </CardContent>
+              </Card>
+              </div>
+              </div>
+              </div>
+              );
+              }
 }

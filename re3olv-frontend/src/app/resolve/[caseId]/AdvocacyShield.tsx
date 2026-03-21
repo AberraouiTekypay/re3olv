@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Send, Sparkles, ShieldCheck, User, Bot, Loader2 } from 'lucide-react';
+import { Send, Sparkles, ShieldCheck, User, Bot, Loader2, ShieldAlert, Scale, Info } from 'lucide-react';
 import { fetchApi } from '@/lib/api-client';
 import { toast } from 'sonner';
 
@@ -27,6 +27,8 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
   const [historyLoading, setHistoryLoading] = useState(true);
   const [success, setSuccess] = useState(isFeeFrozen);
   const [aiReason, setAiReason] = useState(hardshipReason);
+  const [consentGranted, setConsentGranted] = useState(false);
+  const [showComplianceModal, setShowComplianceModal] = useState(!isFeeFrozen);
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -36,12 +38,14 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
         const history = await fetchApi<any[]>(`/cases/${caseId}/chat-history`);
         if (history.length > 0) {
           setMessages(history.map(m => ({ role: m.sender as 'NOVA' | 'USER', content: m.content })));
+          setConsentGranted(true);
+          setShowComplianceModal(false);
         } else {
           setMessages([{ role: 'NOVA', content: "Hi, I'm Nova. If you're facing financial hardship, tell me your story. I might be able to freeze your fees and waive penalties instantly." }]);
         }
       } catch (error) {
         console.error('Failed to load chat history', error);
-        setMessages([{ role: 'NOVA', content: "Hi, I'm Nova. If you're facing financial hardship, tell me your story. I might be able to freeze your fees and waive penalties instantly." }]);
+        setMessages([{ role: 'NOVA', content: "Hi, I'm Nova. If you're facing financial hardship, tell me your story." }]);
       } finally {
         setHistoryLoading(false);
       }
@@ -95,6 +99,62 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
     }
   };
 
+  if (showComplianceModal && !success) {
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4">
+        <Card className="max-w-xl w-full border-0 shadow-2xl rounded-[2.5rem] overflow-hidden bg-white">
+          <CardHeader className="bg-indigo-600 text-white p-10 text-center">
+            <div className="bg-white/20 w-fit mx-auto p-4 rounded-3xl mb-6">
+              <Scale size={40} className="text-white" />
+            </div>
+            <CardTitle className="text-3xl font-black tracking-tight uppercase italic">Compliance Gateway</CardTitle>
+            <CardDescription className="text-indigo-100 text-lg font-medium mt-2">
+              RE3OLV Institutional Transparency & Consent
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-10 space-y-8">
+            <div className="space-y-4">
+              <div className="flex items-start gap-4">
+                <div className="bg-blue-50 p-2 rounded-xl shrink-0"><Bot size={20} className="text-blue-600" /></div>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  <strong>AI Disclosure:</strong> You are interacting with Nova, an Artificial Intelligence facilitator. Nova is programmed to analyze financial hardship under [MFI] regulatory frameworks.
+                </p>
+              </div>
+              <div className="flex items-start gap-4">
+                <div className="bg-green-50 p-2 rounded-xl shrink-0"><ShieldCheck size={20} className="text-green-600" /></div>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  <strong>Data Consent:</strong> By proceeding, you consent to the processing of your financial data and hardship story for the purpose of debt resolution. Data is stored under GDPR/FDCPA 2026 standards.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 flex items-center gap-4">
+              <input 
+                type="checkbox" 
+                id="consent" 
+                className="w-6 h-6 rounded-lg accent-indigo-600 cursor-pointer"
+                checked={consentGranted}
+                onChange={(e) => setConsentGranted(e.target.checked)}
+              />
+              <label htmlFor="consent" className="text-sm font-black text-slate-700 cursor-pointer">
+                I understand Nova is an AI and I consent to the institutional terms.
+              </label>
+            </div>
+          </CardContent>
+          <CardFooter className="p-10 pt-0">
+            <Button 
+              className="w-full h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-lg font-black uppercase tracking-tighter shadow-xl shadow-indigo-200 disabled:opacity-50 transition-all"
+              disabled={!consentGranted}
+              onClick={() => setShowComplianceModal(false)}
+            >
+              Start Advocacy Chat
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    );
+  }
+
   if (success) {
     return (
       <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-[2px] rounded-3xl mb-12 shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-1000">
@@ -135,14 +195,17 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
               <Bot className="text-white" size={24} />
             </div>
             <div>
-              <CardTitle className="text-2xl font-black tracking-tight text-gray-900">Nova</CardTitle>
+              <CardTitle className="text-2xl font-black tracking-tight text-gray-900">Nova Facilitator</CardTitle>
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <CardDescription className="font-medium text-slate-500">Advocacy Intelligence</CardDescription>
+                <CardDescription className="font-medium text-slate-500">Institutional AI Assistant</CardDescription>
               </div>
             </div>
           </div>
-          <Sparkles className="text-indigo-400 opacity-50" size={32} />
+          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
+            <Info size={14} className="text-slate-400" />
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">AI Disclosure Active</span>
+          </div>
         </div>
       </CardHeader>
       
@@ -150,6 +213,12 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
         className="h-[400px] overflow-y-auto p-8 space-y-6 scroll-smooth"
         ref={scrollRef}
       >
+        <div className="text-center mb-8">
+          <p className="text-[10px] text-slate-400 font-medium uppercase tracking-[0.2em] bg-white w-fit mx-auto px-4 py-1 rounded-full border border-slate-50">
+            All settlements facilitate by Nova (AI) are legally binding
+          </p>
+        </div>
+
         {historyLoading ? (
           <div className="h-full flex items-center justify-center">
             <Loader2 className="animate-spin text-indigo-600" size={32} />
@@ -163,12 +232,19 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
               <div className={`p-2 rounded-xl shrink-0 ${msg.role === 'USER' ? 'bg-slate-200' : 'bg-indigo-100'}`}>
                 {msg.role === 'USER' ? <User size={18} /> : <Bot size={18} className="text-indigo-600" />}
               </div>
-              <div className={`max-w-[80%] px-5 py-3 rounded-2xl text-[15px] leading-relaxed shadow-sm border ${
-                msg.role === 'USER' 
-                  ? 'bg-white border-slate-100 rounded-br-none' 
-                  : 'bg-indigo-600 text-white border-indigo-500 rounded-bl-none'
-              }`}>
-                {msg.content}
+              <div className="relative group max-w-[80%]">
+                <div className={`px-5 py-3 rounded-2xl text-[15px] leading-relaxed shadow-sm border ${
+                  msg.role === 'USER' 
+                    ? 'bg-white text-slate-800 border-slate-100 rounded-br-none' 
+                    : 'bg-indigo-600 text-white rounded-tl-none'
+                }`}>
+                  {msg.content}
+                </div>
+                {msg.role === 'NOVA' && (
+                  <span className="absolute -bottom-4 left-0 text-[8px] font-black uppercase text-slate-400 tracking-tighter opacity-0 group-hover:opacity-100 transition-opacity">
+                    AI-Generated Response
+                  </span>
+                )}
               </div>
             </div>
           ))

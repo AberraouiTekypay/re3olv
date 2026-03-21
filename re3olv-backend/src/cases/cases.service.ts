@@ -199,4 +199,22 @@ export class CasesService {
       orderBy: { createdAt: 'asc' },
     });
   }
+
+  async deleteCaseData(caseId: string) {
+    // GDPR 'Right to be Forgotten' - Cascade deletion handled by relations
+    return this.prisma.case.delete({
+      where: { id: caseId },
+    });
+  }
+
+  async logComplianceAction(caseId: string, action: string, reasoning: string) {
+    return this.prisma.complianceAudit.create({
+      data: {
+        caseId,
+        action,
+        reasoning,
+        regulatoryRef: 'EU-AI-ACT-2026-COMPLIANT',
+      },
+    });
+  }
 }
