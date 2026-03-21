@@ -81,8 +81,18 @@ export class CasesController {
     return updatedCase;
   }
 
+  @Post(':id/toggle-freeze')
+  async toggleFreeze(@Param('id') id: string, @Body('freeze') freeze: boolean) {
+    const updatedCase = await this.casesService.toggleFeeFreeze(id, freeze);
+    if (!updatedCase) {
+      throw new NotFoundException(`Case with ID ${id} not found`);
+    }
+    return updatedCase;
+  }
+
   @Get('analytics/roi')
-  async getROI() {
-    return this.casesService.getROIStats();
+  async getROI(@Query('organizationId') orgId?: string) {
+    // In a real app, orgId comes from the authenticated user's session
+    return this.casesService.getROIStats(orgId);
   }
 }

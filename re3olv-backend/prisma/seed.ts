@@ -9,10 +9,20 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('Start seeding...');
 
+  // 0. Create Default Org
+  const defaultOrg = await prisma.organization.upsert({
+    where: { id: 'default-org' },
+    update: {},
+    create: {
+      id: 'default-org',
+      name: 'RE3OLV Default MFI',
+    },
+  });
+
   // 1. High Penalty Case
   await prisma.case.upsert({
     where: { id: 'case-01-high-penalty' },
-    update: {},
+    update: { organizationId: 'default-org' },
     create: {
       id: 'case-01-high-penalty',
       borrowerName: 'Sarah Jenkins',
@@ -20,13 +30,14 @@ async function main() {
       totalAmount: 2800.00,
       penaltyWaived: 0,
       status: 'OPEN',
+      organizationId: 'default-org',
     },
   });
 
   // 2. Partial Payment Case
   await prisma.case.upsert({
     where: { id: 'case-02-partial-pay' },
-    update: {},
+    update: { organizationId: 'default-org' },
     create: {
       id: 'case-02-partial-pay',
       borrowerName: 'Marcus Aurelius',
@@ -34,52 +45,56 @@ async function main() {
       paidAmount: 500.00,
       totalAmount: 1000.00,
       status: 'OPEN',
+      organizationId: 'default-org',
     },
   });
 
   // 3. Vague Case
   await prisma.case.upsert({
     where: { id: 'case-03-vague' },
-    update: {},
+    update: { organizationId: 'default-org' },
     create: {
       id: 'case-03-vague',
       borrowerName: 'Unknown Debtor',
       principalAmount: 500.00,
       totalAmount: 500.00,
       status: 'OPEN',
+      organizationId: 'default-org',
     },
   });
 
   // 4. Large Corporate Case
   await prisma.case.upsert({
     where: { id: 'case-04-large' },
-    update: {},
+    update: { organizationId: 'default-org' },
     create: {
       id: 'case-04-large',
       borrowerName: 'Global Corp Inc',
       principalAmount: 25000.00,
       totalAmount: 26500.00,
       status: 'OPEN',
+      organizationId: 'default-org',
     },
   });
 
   // 5. Small Consumer Case
   await prisma.case.upsert({
     where: { id: 'case-05-small' },
-    update: {},
+    update: { organizationId: 'default-org' },
     create: {
       id: 'case-05-small',
       borrowerName: 'Alice Miller',
       principalAmount: 120.00,
       totalAmount: 150.00,
       status: 'OPEN',
+      organizationId: 'default-org',
     },
   });
 
   // 6. Hardship Advocacy Case (Pre-applied)
   await prisma.case.upsert({
     where: { id: 'case-06-hardship' },
-    update: {},
+    update: { organizationId: 'default-org' },
     create: {
       id: 'case-06-hardship',
       borrowerName: 'Robert Johnson',
@@ -89,13 +104,14 @@ async function main() {
       penaltyWaived: 250.00,
       hardshipReason: 'Medical illness verified by Nova.',
       status: 'ADVOCACY',
+      organizationId: 'default-org',
     },
   });
 
   // 7. Resolved Case
   await prisma.case.upsert({
     where: { id: 'case-07-resolved' },
-    update: {},
+    update: { organizationId: 'default-org' },
     create: {
       id: 'case-07-resolved',
       borrowerName: 'Emily Davis',
@@ -103,45 +119,49 @@ async function main() {
       totalAmount: 3200.00,
       status: 'RESOLVED',
       selectedOptionId: 'lump-sum',
+      organizationId: 'default-org',
     },
   });
 
   // 8. Long-term Installment Case
   await prisma.case.upsert({
     where: { id: 'case-08-long-term' },
-    update: {},
+    update: { organizationId: 'default-org' },
     create: {
       id: 'case-08-long-term',
       borrowerName: 'David Wilson',
       principalAmount: 8000.00,
       totalAmount: 8000.00,
       status: 'OPEN',
+      organizationId: 'default-org',
     },
   });
 
   // 9. Short-term Installment Case
   await prisma.case.upsert({
     where: { id: 'case-09-short-term' },
-    update: {},
+    update: { organizationId: 'default-org' },
     create: {
       id: 'case-09-short-term',
       borrowerName: 'Sophia Clark',
       principalAmount: 3000.00,
       totalAmount: 3000.00,
       status: 'OPEN',
+      organizationId: 'default-org',
     },
   });
 
   // 10. High Principal Case
   await prisma.case.upsert({
     where: { id: 'case-10-high-principal' },
-    update: {},
+    update: { organizationId: 'default-org' },
     create: {
       id: 'case-10-high-principal',
       borrowerName: 'John Smith',
       principalAmount: 50000.00,
       totalAmount: 50000.00,
       status: 'OPEN',
+      organizationId: 'default-org',
     },
   });
 

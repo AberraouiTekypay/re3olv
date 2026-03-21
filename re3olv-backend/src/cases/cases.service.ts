@@ -13,15 +13,17 @@ export class CasesService {
     this.prisma = new PrismaClient({ adapter });
   }
 
-  async findAll() {
+  async findAll(organizationId?: string) {
     return this.prisma.case.findMany({
+      where: organizationId ? { organizationId } : {},
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findOne(id: string) {
+  async findOne(id: string, organizationId?: string) {
     return this.prisma.case.findUnique({
-      where: { id },
+      where: organizationId ? { id, organizationId } : { id },
+      include: { actionLogs: { orderBy: { createdAt: 'desc' } } },
     });
   }
 
@@ -78,11 +80,20 @@ export class CasesService {
       data: {
         status: 'SETTLED',
         paidAmount: amount,
+        settledAt: new Date(),
       },
     });
   }
 
   async trackView(caseId: string) {
+    await this.prisma.actionLog.create({
+      data: {
+        caseId,
+        action: 'MAGIC_LINK_VIEW',
+        details: 'User accessed the resolution portal via magic link.',
+      }
+    });
+
     return this.prisma.case.update({
       where: { id: caseId },
       data: {
@@ -93,7 +104,6 @@ export class CasesService {
   }
 
   async startAdvocacy(caseId: string) {
-    console.log(`Starting advocacy for case ${caseId}`);
     return this.prisma.case.update({
       where: { id: caseId },
       data: {
@@ -102,7 +112,15 @@ export class CasesService {
     });
   }
 
-  async applyAdvocacy(caseId: string, hardshipReason?: string) {
+  async applyAdvocacy(caseId: string, hardshipReason?: string, isManual: boolean = false) {
+    await this.prisma.actionLog.create({
+      data: {
+        caseId,
+        action: isManual ? 'MANUAL_OVERRIDE' : 'NOVA_SHIELD_TRIGGER',
+        details: isManual ? 'Agent manually adjusted fees.' : `Nova detected hardship: ${hardshipReason}`,
+      }
+    });
+
     return this.prisma.case.update({
       where: { id: caseId },
       data: {
@@ -113,46 +131,59 @@ export class CasesService {
     });
   }
 
-  async getROIStats() {
-    const cases = await this.findAll();
+  async toggleFeeFreeze(caseId: string, freeze: boolean) {
+    await this.prisma.actionLog.create({
+      data: {
+        caseId,
+        action: 'MANUAL_OVERRIDE',
+        details: `Agent ${freeze ? 'froze' : 'unfroze'} fees manually.`,
+      }
+    });
+
+    return this.prisma.case.update({
+      where: { id: caseId },
+      data: {
+        isFeeFrozen: freeze,
+      },
+    });
+  }
+
+  async getROIStats(organizationId?: string) {
+    const cases = await this.findAll(organizationId);
     
     let totalManaged = 0;
     let totalCollected = 0;
     let totalWaived = 0;
-    let resolvedCount = 0;
+    let settledCount = 0;
+    let totalVelocityMs = 0;
 
     for (const c of cases) {
       totalManaged += c.totalAmount;
-      if (c.penaltyWaived) totalWaived += c.penaltyWaived;
+      totalWaived += c.penaltyWaived || 0;
 
-      if (c.status === 'RESOLVED' && c.selectedOptionId) {
-        resolvedCount++;
-        const base = c.totalAmount - (c.penaltyWaived || 0);
-        let collected = 0;
+      if (c.status === 'SETTLED') {
+        settledCount++;
+        totalCollected += c.paidAmount;
         
-        if (c.selectedOptionId === 'lump-sum') {
-          collected = base * 0.6;
-          totalWaived += base * 0.4;
-        } else if (c.selectedOptionId === 'short-term') {
-          collected = base;
-        } else if (c.selectedOptionId === 'long-term') {
-          collected = c.isFeeFrozen ? base : base * 1.1;
-          if (!c.isFeeFrozen) {
-             // Technically "extra" ROI, not impact
-          }
+        if (c.magicLinkCreatedAt && c.settledAt) {
+          totalVelocityMs += (c.settledAt.getTime() - c.magicLinkCreatedAt.getTime());
         }
-        totalCollected += collected;
       }
     }
+
+    const avgVelocityDays = settledCount > 0 && totalVelocityMs > 0 
+      ? (totalVelocityMs / settledCount) / (1000 * 60 * 60 * 24)
+      : 0;
 
     return {
       totalManaged,
       totalCollected,
       totalWaived,
-      resolvedCount,
+      settledCount,
       totalCases: cases.length,
       roi: totalManaged > 0 ? (totalCollected / totalManaged) * 100 : 0,
       socialImpact: totalManaged > 0 ? (totalWaived / totalManaged) * 100 : 0,
+      recoveryVelocity: avgVelocityDays.toFixed(1),
     };
   }
 }

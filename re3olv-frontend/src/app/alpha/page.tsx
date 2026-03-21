@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, ShieldCheck, User as UserIcon, Link as LinkIcon, Copy, MessageSquare } from 'lucide-react';
+import { ExternalLink, ShieldCheck, User as UserIcon, MessageSquare, LayoutDashboard, Settings } from 'lucide-react';
 import { fetchApi } from '@/lib/api-client';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 interface CaseData {
   id: string;
@@ -51,20 +52,29 @@ export default function AlphaLaunchpad() {
 
   return (
     <div className="container mx-auto py-12 px-4 max-w-6xl">
-      <header className="mb-12 border-b border-indigo-100 pb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="bg-indigo-600 text-white p-2 rounded-lg">
-            <ShieldCheck size={24} />
+      <header className="mb-12 border-b border-indigo-100 pb-8 flex justify-between items-center">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="bg-indigo-600 text-white p-2 rounded-lg">
+              <ShieldCheck size={24} />
+            </div>
+            <h1 className="text-4xl font-black tracking-tighter text-gray-900 uppercase">Alpha Launchpad</h1>
           </div>
-          <h1 className="text-4xl font-black tracking-tighter text-gray-900 uppercase">Alpha Launchpad</h1>
+          <p className="text-lg text-slate-500 font-medium">360 Platform Stress Test & QA Environment</p>
         </div>
-        <p className="text-lg text-slate-500 font-medium">Stress Test & QA Environment for RE3OLV 1.0</p>
+        <div className="flex gap-4">
+          <Button variant="outline" className="rounded-2xl font-bold border-2" asChild>
+            <Link href="/agent/dashboard">
+              <LayoutDashboard size={18} className="mr-2" /> Global Dashboard
+            </Link>
+          </Button>
+        </div>
       </header>
 
       <Card className="border-0 shadow-2xl rounded-3xl overflow-hidden bg-white/50 backdrop-blur-md">
         <CardHeader className="bg-white/80 border-b border-slate-100 py-8 px-10">
           <CardTitle className="text-2xl font-black text-gray-800 flex items-center gap-2">
-            <UserIcon className="text-indigo-500" size={24} /> Test Data: Case Registry
+            <UserIcon className="text-indigo-500" size={24} /> Case Registry: Debtor vs Agent Flows
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -72,10 +82,10 @@ export default function AlphaLaunchpad() {
             <TableHeader className="bg-slate-50">
               <TableRow>
                 <TableHead className="px-10 py-5 font-bold text-slate-700 uppercase tracking-wider text-xs">Borrower</TableHead>
-                <TableHead className="py-5 font-bold text-slate-700 uppercase tracking-wider text-xs">Total Debt</TableHead>
+                <TableHead className="py-5 font-bold text-slate-700 uppercase tracking-wider text-xs">Exposure</TableHead>
                 <TableHead className="py-5 font-bold text-slate-700 uppercase tracking-wider text-xs">Tracking</TableHead>
                 <TableHead className="py-5 font-bold text-slate-700 uppercase tracking-wider text-xs">Status</TableHead>
-                <TableHead className="px-10 py-5 font-bold text-slate-700 uppercase tracking-wider text-xs text-right">Actions</TableHead>
+                <TableHead className="px-10 py-5 font-bold text-slate-700 uppercase tracking-wider text-xs text-right">360 Flow Testing</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -102,28 +112,37 @@ export default function AlphaLaunchpad() {
                   </TableCell>
                   <TableCell className="py-6">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                      c.status === 'SETTLED' ? 'bg-green-600 text-white' :
                       c.status === 'RESOLVED' ? 'bg-green-100 text-green-700' : 
-                      c.status === 'SETTLED' ? 'bg-emerald-600 text-white' :
                       c.status === 'ADVOCACY' ? 'bg-purple-100 text-purple-700' : 
                       'bg-orange-100 text-orange-700'
                     }`}>
                       {c.status}
                     </span>
                   </TableCell>
-                  <TableCell className="px-10 py-6 text-right flex justify-end gap-3">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="rounded-xl font-bold border-indigo-100 text-indigo-600 hover:bg-indigo-50"
-                      onClick={() => generateAndCopyNudge(c)}
-                    >
-                      <MessageSquare size={14} className="mr-2" /> Nudge
-                    </Button>
-                    <Button variant="outline" size="sm" className="rounded-xl font-bold bg-white hover:bg-slate-50 border-2" asChild>
-                      <a href={`/resolve/${c.id}`} target="_blank" rel="noopener noreferrer">
-                        Portal <ExternalLink size={14} className="ml-2" />
-                      </a>
-                    </Button>
+                  <TableCell className="px-10 py-6 text-right flex justify-end gap-2">
+                    <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="rounded-xl font-bold border-indigo-100 text-indigo-600 hover:bg-indigo-50 flex-1"
+                          onClick={() => generateAndCopyNudge(c)}
+                        >
+                          <MessageSquare size={14} className="mr-2" /> Nudge
+                        </Button>
+                        <Button variant="outline" size="sm" className="rounded-xl font-bold bg-white hover:bg-slate-50 border-2 flex-1" asChild>
+                          <a href={`/resolve/${c.id}`} target="_blank" rel="noopener noreferrer">
+                            Portal <ExternalLink size={14} className="ml-2" />
+                          </a>
+                        </Button>
+                      </div>
+                      <Button size="sm" className="rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 w-full" asChild>
+                        <Link href={`/admin/cases/${c.id}`}>
+                          <Settings size={14} className="mr-2" /> Agent Management
+                        </Link>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
