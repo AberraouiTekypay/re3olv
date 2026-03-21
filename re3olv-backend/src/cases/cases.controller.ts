@@ -41,7 +41,7 @@ export class CasesController {
     return updatedCase;
   }
 
-  @Post(':id/hardship')
+  @Post(':id/chat')
   async processHardship(@Param('id') id: string, @Body('story') story: string) {
     return this.advocacyBrainService.processHardshipStory(id, story);
   }

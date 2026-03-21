@@ -15,7 +15,7 @@ export class AdvocacyBrainService {
   async processHardshipStory(caseId: string, story: string) {
     this.logger.log(`Analyzing hardship story for case ${caseId}`);
 
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-3-flash' });
 
     const prompt = `
       Act as a debt counselor. If the user's message indicates job loss, illness, or extreme financial hardship, output JSON: { "hardshipDetected": true, "reason": string }. Otherwise, output false.
