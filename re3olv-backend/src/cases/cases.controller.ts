@@ -54,4 +54,9 @@ export class CasesController {
     }
     return updatedCase;
   }
+
+  @Get('analytics/roi')
+  async getROI() {
+    return this.casesService.getROIStats();
+  }
 }

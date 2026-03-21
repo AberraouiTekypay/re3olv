@@ -92,4 +92,47 @@ export class CasesService {
       },
     });
   }
+
+  async getROIStats() {
+    const cases = await this.findAll();
+    
+    let totalManaged = 0;
+    let totalCollected = 0;
+    let totalWaived = 0;
+    let resolvedCount = 0;
+
+    for (const c of cases) {
+      totalManaged += c.totalAmount;
+      if (c.penaltyWaived) totalWaived += c.penaltyWaived;
+
+      if (c.status === 'RESOLVED' && c.selectedOptionId) {
+        resolvedCount++;
+        const base = c.totalAmount - (c.penaltyWaived || 0);
+        let collected = 0;
+        
+        if (c.selectedOptionId === 'lump-sum') {
+          collected = base * 0.6;
+          totalWaived += base * 0.4;
+        } else if (c.selectedOptionId === 'short-term') {
+          collected = base;
+        } else if (c.selectedOptionId === 'long-term') {
+          collected = c.isFeeFrozen ? base : base * 1.1;
+          if (!c.isFeeFrozen) {
+             // Technically "extra" ROI, not impact
+          }
+        }
+        totalCollected += collected;
+      }
+    }
+
+    return {
+      totalManaged,
+      totalCollected,
+      totalWaived,
+      resolvedCount,
+      totalCases: cases.length,
+      roi: totalManaged > 0 ? (totalCollected / totalManaged) * 100 : 0,
+      socialImpact: totalManaged > 0 ? (totalWaived / totalManaged) * 100 : 0,
+    };
+  }
 }
