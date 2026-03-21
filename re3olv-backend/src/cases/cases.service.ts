@@ -54,4 +54,14 @@ export class CasesService {
       },
     ];
   }
+
+  async resolveCase(caseId: string, optionId: string) {
+    return this.prisma.case.update({
+      where: { id: caseId },
+      data: {
+        status: 'RESOLVED',
+        selectedOptionId: optionId,
+      },
+    });
+  }
 }

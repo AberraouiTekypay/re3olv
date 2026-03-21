@@ -1,4 +1,4 @@
-import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, NotFoundException } from '@nestjs/common';
 import { CasesService } from './cases.service.js';
 
 @Controller('cases')
@@ -21,5 +21,14 @@ export class CasesController {
       throw new NotFoundException(`Case with ID ${id} not found`);
     }
     return options;
+  }
+
+  @Post(':id/resolve')
+  async resolveCase(@Param('id') id: string, @Body('optionId') optionId: string) {
+    const updatedCase = await this.casesService.resolveCase(id, optionId);
+    if (!updatedCase) {
+      throw new NotFoundException(`Case with ID ${id} not found`);
+    }
+    return updatedCase;
   }
 }

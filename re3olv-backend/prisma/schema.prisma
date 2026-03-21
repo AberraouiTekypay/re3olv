@@ -13,9 +13,10 @@ datasource db {
 }
 
 model Case {
-  id          String   @id @default(uuid())
-  totalAmount Float
-  status      String   @default("OPEN")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(uuid())
+  totalAmount      Float
+  status           String   @default("OPEN")
+  selectedOptionId String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }

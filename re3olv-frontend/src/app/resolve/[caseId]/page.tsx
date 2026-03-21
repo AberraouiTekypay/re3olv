@@ -1,7 +1,6 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BadgeCheck, CreditCard, CalendarDays } from 'lucide-react';
+import { SettlementSelector } from './SettlementSelector';
 
 interface SettlementOption {
   id: string;
@@ -52,43 +51,7 @@ export default async function ResolvePage({ params }: { params: { caseId: string
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {options.map((option) => (
-            <Card key={option.id} className={`flex flex-col border-2 transition-all hover:border-primary/50 ${option.id === 'lump-sum' ? 'border-primary shadow-lg scale-105' : ''}`}>
-              <CardHeader>
-                <div className="flex justify-between items-start mb-2">
-                  {option.id === 'lump-sum' && (
-                    <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-                      <BadgeCheck size={14} /> Recommended
-                    </div>
-                  )}
-                  {option.id === 'short-term' && <CreditCard className="text-muted-foreground" size={20} />}
-                  {option.id === 'long-term' && <CalendarDays className="text-muted-foreground" size={20} />}
-                </div>
-                <CardTitle className="text-xl">{option.name}</CardTitle>
-                <CardDescription>{option.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow flex flex-col items-center justify-center py-6">
-                <p className="text-3xl font-bold">${option.amount.toLocaleString()}</p>
-                {option.monthlyPayment && (
-                  <p className="text-sm text-muted-foreground mt-1">
-                    ${option.monthlyPayment.toFixed(2)} / month for {option.installments} months
-                  </p>
-                )}
-                {option.savings && (
-                  <p className="text-sm text-green-600 font-semibold mt-2">
-                    Save ${option.savings.toLocaleString()}
-                  </p>
-                )}
-              </CardContent>
-              <CardFooter>
-                <Button className="w-full" variant={option.id === 'lump-sum' ? 'default' : 'outline'}>
-                  Select Plan
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+        <SettlementSelector caseId={caseId} options={options} initialStatus={caseData.status} />
 
         <footer className="mt-16 text-center text-sm text-muted-foreground">
           <p>Need help? Contact our support team at support@re3olv.com</p>
