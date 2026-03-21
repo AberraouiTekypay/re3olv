@@ -15,13 +15,10 @@ export class AdvocacyBrainService {
   async processHardshipStory(caseId: string, story: string) {
     this.logger.log(`Analyzing hardship story for case ${caseId}`);
 
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-3-flash' });
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
     const prompt = `
-      Analyze the following debtor's hardship story and determine if they are in financial distress.
-      Respond with a JSON object containing:
-      - "isFinancialDistress": boolean
-      - "reason": string summarizing the analysis
+      Act as a debt counselor. If the user's message indicates job loss, illness, or extreme financial hardship, output JSON: { "hardshipDetected": true, "reason": string }. Otherwise, output false.
       
       Story: "${story}"
     `;
@@ -31,15 +28,24 @@ export class AdvocacyBrainService {
       const response = await result.response;
       const text = response.text();
       
-      // Basic JSON extraction from markdown if necessary
-      const jsonMatch = text.match(/\{.*\}/s);
-      const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { isFinancialDistress: false, reason: 'Failed to parse AI response' };
+      this.logger.log(`AI Text Output: ${text}`);
 
-      this.logger.log(`Analysis result: ${JSON.stringify(analysis)}`);
+      let analysis = { hardshipDetected: false, reason: '' };
+      
+      if (text.toLowerCase().includes('false')) {
+        analysis.hardshipDetected = false;
+      } else {
+        const jsonMatch = text.match(/\{.*\}/s);
+        if (jsonMatch) {
+          analysis = JSON.parse(jsonMatch[0]);
+        }
+      }
 
-      if (analysis.isFinancialDistress) {
-        this.logger.log(`Financial distress detected for case ${caseId}. Starting advocacy...`);
-        await this.casesService.startAdvocacy(caseId);
+      this.logger.log(`Parsed Analysis result: ${JSON.stringify(analysis)}`);
+
+      if (analysis.hardshipDetected) {
+        this.logger.log(`Hardship detected for case ${caseId}. Applying Advocacy Shield automatically...`);
+        await this.casesService.applyAdvocacy(caseId, analysis.reason);
       }
 
       return analysis;

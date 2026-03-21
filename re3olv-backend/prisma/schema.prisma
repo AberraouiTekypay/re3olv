@@ -19,6 +19,7 @@ model Case {
   penaltyWaived    Float    @default(0)
   status           String   @default("OPEN")
   selectedOptionId String?
+  hardshipReason   String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }

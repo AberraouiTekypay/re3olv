@@ -81,12 +81,13 @@ export class CasesService {
     });
   }
 
-  async applyAdvocacy(caseId: string) {
+  async applyAdvocacy(caseId: string, hardshipReason?: string) {
     return this.prisma.case.update({
       where: { id: caseId },
       data: {
         isFeeFrozen: true,
         penaltyWaived: 50.0,
+        hardshipReason,
       },
     });
   }
