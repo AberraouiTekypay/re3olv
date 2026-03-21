@@ -92,7 +92,7 @@ async function main() {
   });
 
   // 6. Hardship Advocacy Case (Pre-applied)
-  await prisma.case.upsert({
+  const robertCase = await prisma.case.upsert({
     where: { id: 'case-06-hardship' },
     update: { organizationId: 'default-org' },
     create: {
@@ -100,11 +100,52 @@ async function main() {
       borrowerName: 'Robert Johnson',
       principalAmount: 4500.00,
       totalAmount: 4500.00,
+      creditScore: 580,
       isFeeFrozen: true,
       penaltyWaived: 250.00,
       hardshipReason: 'Medical illness verified by Nova.',
       status: 'ADVOCACY',
       organizationId: 'default-org',
+    },
+  });
+
+  // External debts for Robert
+  await prisma.externalDebt.upsert({
+    where: { id: 'ext-debt-01' },
+    update: {},
+    create: {
+      id: 'ext-debt-01',
+      caseId: robertCase.id,
+      creditorName: 'QuickPay Loans',
+      amount: 1200.00,
+      status: 'DELINQUENT',
+      type: 'LOAN',
+    },
+  });
+
+  await prisma.externalDebt.upsert({
+    where: { id: 'ext-debt-02' },
+    update: {},
+    create: {
+      id: 'ext-debt-02',
+      caseId: robertCase.id,
+      creditorName: 'City Power & Water',
+      amount: 450.00,
+      status: 'DELINQUENT',
+      type: 'UTILITY',
+    },
+  });
+
+  await prisma.externalDebt.upsert({
+    where: { id: 'ext-debt-03' },
+    update: {},
+    create: {
+      id: 'ext-debt-03',
+      caseId: robertCase.id,
+      creditorName: 'Capital Card',
+      amount: 6300.00,
+      status: 'CURRENT',
+      type: 'CREDIT_CARD',
     },
   });
 

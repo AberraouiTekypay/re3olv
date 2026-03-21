@@ -26,6 +26,7 @@ export class CasesService {
       include: { 
         actionLogs: { orderBy: { createdAt: 'desc' } },
         chatMessages: { orderBy: { createdAt: 'asc' } },
+        externalDebts: true,
       },
     });
   }

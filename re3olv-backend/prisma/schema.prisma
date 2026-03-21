@@ -33,6 +33,7 @@ model Case {
   principalAmount  Float    @default(0)
   paidAmount       Float    @default(0)
   totalAmount      Float
+  creditScore      Int      @default(600)
   isFeeFrozen      Boolean  @default(false)
   penaltyWaived    Float    @default(0)
   status           String   @default("OPEN")
@@ -48,8 +49,21 @@ model Case {
   organization     Organization @relation(fields: [organizationId], references: [id])
   actionLogs       ActionLog[]
   chatMessages     ChatMessage[]
+  externalDebts    ExternalDebt[]
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+model ExternalDebt {
+  id           String   @id @default(uuid())
+  caseId       String
+  case         Case     @relation(fields: [caseId], references: [id])
+  creditorName String
+  amount       Float
+  status       String   // CURRENT, DELINQUENT
+  type         String   // CREDIT_CARD, LOAN, UTILITY
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model ChatMessage {
