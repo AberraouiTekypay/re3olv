@@ -11,3 +11,11 @@ generator client {
 datasource db {
   provider = "sqlite"
 }
+
+model Case {
+  id          String   @id @default(uuid())
+  totalAmount Float
+  status      String   @default("OPEN")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

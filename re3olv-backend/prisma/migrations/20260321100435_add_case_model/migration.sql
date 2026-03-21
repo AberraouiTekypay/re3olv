@@ -1,0 +1,8 @@
+-- CreateTable
+CREATE TABLE "Case" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "totalAmount" REAL NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'OPEN',
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);
