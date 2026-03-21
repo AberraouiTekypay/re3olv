@@ -19,21 +19,13 @@ interface SettlementOption {
 
 export function SettlementSelector({ caseId, options, initialStatus }: { caseId: string, options: SettlementOption[], initialStatus: string }) {
   const [loading, setLoading] = useState<string | null>(null);
-  const [status, setStatus] = useState<string>(initialStatus);
   const router = useRouter();
 
-  if (status === 'RESOLVED') {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 text-center">
-        <CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />
-        <h2 className="text-3xl font-bold mb-2">Case Resolved</h2>
-        <p className="text-muted-foreground text-lg mb-6">
-          Thank you. You have successfully selected a settlement plan for this case.
-        </p>
-        <Button onClick={() => router.push('/')}>Return Home</Button>
-      </div>
-    );
-  }
+  React.useEffect(() => {
+    if (initialStatus === 'RESOLVED') {
+      router.replace(`/resolve/${caseId}/confirmation`);
+    }
+  }, [initialStatus, caseId, router]);
 
   const handleSelectPlan = async (optionId: string) => {
     setLoading(optionId);
@@ -48,8 +40,7 @@ export function SettlementSelector({ caseId, options, initialStatus }: { caseId:
         throw new Error('Failed to resolve case');
       }
 
-      setStatus('RESOLVED');
-      router.refresh();
+      router.push(`/resolve/${caseId}/confirmation`);
     } catch (error) {
       console.error(error);
       alert('An error occurred while selecting the plan. Please try again.');
@@ -57,6 +48,10 @@ export function SettlementSelector({ caseId, options, initialStatus }: { caseId:
       setLoading(null);
     }
   };
+
+  if (initialStatus === 'RESOLVED') {
+    return null;
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
