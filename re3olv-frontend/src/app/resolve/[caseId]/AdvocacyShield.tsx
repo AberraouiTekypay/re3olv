@@ -9,7 +9,7 @@ import { fetchApi } from '@/lib/api-client';
 import { toast } from 'sonner';
 
 interface Message {
-  role: 'nova' | 'user';
+  role: 'NOVA' | 'USER';
   content: string;
 }
 
@@ -21,15 +21,34 @@ interface AdvocacyShieldProps {
 }
 
 export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipReason }: AdvocacyShieldProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'nova', content: "Hi, I'm Nova. If you're facing financial hardship, tell me your story. I might be able to freeze your fees and waive penalties instantly." }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [success, setSuccess] = useState(isFeeFrozen);
   const [aiReason, setAiReason] = useState(hardshipReason);
   const scrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const history = await fetchApi<any[]>(`/cases/${caseId}/chat-history`);
+        if (history.length > 0) {
+          setMessages(history.map(m => ({ role: m.sender as 'NOVA' | 'USER', content: m.content })));
+        } else {
+          setMessages([{ role: 'NOVA', content: "Hi, I'm Nova. If you're facing financial hardship, tell me your story. I might be able to freeze your fees and waive penalties instantly." }]);
+        }
+      } catch (error) {
+        console.error('Failed to load chat history', error);
+        setMessages([{ role: 'NOVA', content: "Hi, I'm Nova. If you're facing financial hardship, tell me your story. I might be able to freeze your fees and waive penalties instantly." }]);
+      } finally {
+        setHistoryLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, [caseId]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -42,7 +61,7 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
 
     const userMessage = input.trim();
     setInput('');
-    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setMessages(prev => [...prev, { role: 'USER', content: userMessage }]);
     setLoading(true);
 
     try {
@@ -53,7 +72,7 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
       
       if (analysis.hardshipDetected) {
         setMessages(prev => [...prev, { 
-          role: 'nova', 
+          role: 'NOVA', 
           content: `I've analyzed your situation: "${analysis.reason}". I've activated the Advocacy Shield for you.` 
         }]);
         setSuccess(true);
@@ -62,7 +81,7 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
         router.refresh();
       } else {
         setMessages(prev => [...prev, { 
-          role: 'nova', 
+          role: 'NOVA', 
           content: "I'm sorry to hear that, but I couldn't detect a specific qualifying hardship in your story. If you have more details about job loss or illness, please let me know." 
         }]);
       }
@@ -70,7 +89,7 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
       console.error(error);
       const errorMsg = error.message || 'Error processing your story';
       toast.error(errorMsg);
-      setMessages(prev => [...prev, { role: 'nova', content: `Sorry, I encountered an error: ${errorMsg}` }]);
+      setMessages(prev => [...prev, { role: 'NOVA', content: `Sorry, I encountered an error: ${errorMsg}` }]);
     } finally {
       setLoading(false);
     }
@@ -131,23 +150,29 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
         className="h-[400px] overflow-y-auto p-8 space-y-6 scroll-smooth"
         ref={scrollRef}
       >
-        {messages.map((msg, i) => (
-          <div 
-            key={i} 
-            className={`flex items-end gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-          >
-            <div className={`p-2 rounded-xl shrink-0 ${msg.role === 'user' ? 'bg-slate-200' : 'bg-indigo-100'}`}>
-              {msg.role === 'user' ? <User size={18} /> : <Bot size={18} className="text-indigo-600" />}
-            </div>
-            <div className={`max-w-[80%] px-5 py-3 rounded-2xl text-[15px] leading-relaxed shadow-sm border ${
-              msg.role === 'user' 
-                ? 'bg-white border-slate-100 rounded-br-none' 
-                : 'bg-indigo-600 text-white border-indigo-500 rounded-bl-none'
-            }`}>
-              {msg.content}
-            </div>
+        {historyLoading ? (
+          <div className="h-full flex items-center justify-center">
+            <Loader2 className="animate-spin text-indigo-600" size={32} />
           </div>
-        ))}
+        ) : (
+          messages.map((msg, i) => (
+            <div 
+              key={i} 
+              className={`flex items-end gap-3 ${msg.role === 'USER' ? 'flex-row-reverse' : 'flex-row'}`}
+            >
+              <div className={`p-2 rounded-xl shrink-0 ${msg.role === 'USER' ? 'bg-slate-200' : 'bg-indigo-100'}`}>
+                {msg.role === 'USER' ? <User size={18} /> : <Bot size={18} className="text-indigo-600" />}
+              </div>
+              <div className={`max-w-[80%] px-5 py-3 rounded-2xl text-[15px] leading-relaxed shadow-sm border ${
+                msg.role === 'USER' 
+                  ? 'bg-white border-slate-100 rounded-br-none' 
+                  : 'bg-indigo-600 text-white border-indigo-500 rounded-bl-none'
+              }`}>
+                {msg.content}
+              </div>
+            </div>
+          ))
+        )}
         {loading && (
           <div className="flex items-end gap-3">
             <div className="p-2 rounded-xl bg-indigo-100 shrink-0">

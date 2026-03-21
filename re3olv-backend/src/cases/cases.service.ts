@@ -23,7 +23,10 @@ export class CasesService {
   async findOne(id: string, organizationId?: string) {
     return this.prisma.case.findUnique({
       where: organizationId ? { id, organizationId } : { id },
-      include: { actionLogs: { orderBy: { createdAt: 'desc' } } },
+      include: { 
+        actionLogs: { orderBy: { createdAt: 'desc' } },
+        chatMessages: { orderBy: { createdAt: 'asc' } },
+      },
     });
   }
 
@@ -185,5 +188,12 @@ export class CasesService {
       socialImpact: totalManaged > 0 ? (totalWaived / totalManaged) * 100 : 0,
       recoveryVelocity: avgVelocityDays.toFixed(1),
     };
+  }
+
+  async getChatHistory(caseId: string) {
+    return this.prisma.chatMessage.findMany({
+      where: { caseId },
+      orderBy: { createdAt: 'asc' },
+    });
   }
 }

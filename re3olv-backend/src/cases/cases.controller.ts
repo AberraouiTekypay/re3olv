@@ -80,6 +80,11 @@ export class CasesController {
     return this.advocacyBrainService.processHardshipStory(id, story);
   }
 
+  @Get(':id/chat-history')
+  async getChatHistory(@Param('id') id: string) {
+    return this.casesService.getChatHistory(id);
+  }
+
   @Post(':id/apply-advocacy')
   @Roles('AGENT')
   async applyAdvocacy(@Param('id') id: string) {

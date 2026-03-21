@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { ShieldCheck, ShieldAlert, History, User, CreditCard, Activity, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, History, MessageSquare, Activity, ArrowLeft } from 'lucide-react';
 import { fetchApi } from '@/lib/api-client';
 import { toast } from 'sonner';
 
@@ -13,6 +13,13 @@ interface ActionLog {
   id: string;
   action: string;
   details: string | null;
+  createdAt: string;
+}
+
+interface ChatMessage {
+  id: string;
+  sender: 'NOVA' | 'USER' | 'AGENT';
+  content: string;
   createdAt: string;
 }
 
@@ -25,6 +32,7 @@ interface CaseData {
   status: string;
   hardshipReason: string | null;
   actionLogs: ActionLog[];
+  chatMessages: ChatMessage[];
 }
 
 export default function CaseDetailPage() {
@@ -91,6 +99,36 @@ export default function CaseDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
+          <Card className="border-0 shadow-xl rounded-3xl overflow-hidden">
+            <CardHeader className="bg-slate-50 border-b border-slate-100 py-6 px-8">
+              <CardTitle className="flex items-center gap-2 text-xl font-black">
+                <MessageSquare className="text-indigo-600" size={20} /> Conversation Transcript
+              </CardTitle>
+              <CardDescription>Full dialogue history between the borrower and Nova AI.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-8 max-h-[500px] overflow-y-auto space-y-6">
+              {caseData.chatMessages.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 italic font-medium">No chat history available.</div>
+              ) : (
+                caseData.chatMessages.map((msg) => (
+                  <div key={msg.id} className={`flex flex-col ${msg.sender === 'USER' ? 'items-end' : 'items-start'}`}>
+                    <div className="flex items-center gap-2 mb-1.5 px-1">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{msg.sender}</span>
+                      <span className="text-[10px] text-slate-300 font-mono">{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                    </div>
+                    <div className={`max-w-[85%] px-5 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                      msg.sender === 'USER' 
+                        ? 'bg-white text-slate-800 border border-slate-100 rounded-tr-none' 
+                        : 'bg-indigo-600 text-white rounded-tl-none'
+                    }`}>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
           <Card className="border-0 shadow-xl rounded-3xl overflow-hidden">
             <CardHeader className="bg-slate-50 border-b border-slate-100 py-6 px-8">
               <CardTitle className="flex items-center gap-2 text-xl font-black">

@@ -15,6 +15,15 @@ export class AdvocacyBrainService {
   async processHardshipStory(caseId: string, story: string) {
     this.logger.log(`Analyzing hardship story for case ${caseId}`);
 
+    // Persist User Message
+    await this.prisma.chatMessage.create({
+      data: {
+        caseId,
+        sender: 'USER',
+        content: story,
+      }
+    });
+
     const model = this.genAI.getGenerativeModel({ model: 'gemini-3-flash' });
 
     const prompt = `
@@ -31,6 +40,7 @@ export class AdvocacyBrainService {
       this.logger.log(`AI Text Output: ${text}`);
 
       let analysis = { hardshipDetected: false, reason: '' };
+      let novaResponse = "I'm sorry to hear that, but I couldn't detect a specific qualifying hardship in your story. If you have more details about job loss or illness, please let me know.";
       
       if (text.toLowerCase().includes('false')) {
         analysis.hardshipDetected = false;
@@ -46,7 +56,17 @@ export class AdvocacyBrainService {
       if (analysis.hardshipDetected) {
         this.logger.log(`Hardship detected for case ${caseId}. Applying Advocacy Shield automatically...`);
         await this.casesService.applyAdvocacy(caseId, analysis.reason);
+        novaResponse = `I've analyzed your situation: "${analysis.reason}". I've activated the Advocacy Shield for you.`;
       }
+
+      // Persist Nova Response
+      await this.prisma.chatMessage.create({
+        data: {
+          caseId,
+          sender: 'NOVA',
+          content: novaResponse,
+        }
+      });
 
       return analysis;
     } catch (error) {
