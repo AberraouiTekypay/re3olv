@@ -70,4 +70,24 @@ export class CasesService {
       },
     });
   }
+
+  async startAdvocacy(caseId: string) {
+    console.log(`Starting advocacy for case ${caseId}`);
+    return this.prisma.case.update({
+      where: { id: caseId },
+      data: {
+        status: 'ADVOCACY',
+      },
+    });
+  }
+
+  async applyAdvocacy(caseId: string) {
+    return this.prisma.case.update({
+      where: { id: caseId },
+      data: {
+        isFeeFrozen: true,
+        penaltyWaived: 50.0,
+      },
+    });
+  }
 }

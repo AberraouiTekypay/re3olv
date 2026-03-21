@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { SettlementSelector } from './SettlementSelector';
+import { AdvocacyShield } from './AdvocacyShield';
 
 interface SettlementOption {
   id: string;
@@ -17,6 +18,8 @@ interface CaseData {
   id: string;
   totalAmount: number;
   status: string;
+  isFeeFrozen: boolean;
+  penaltyWaived: number;
 }
 
 async function getCaseData(caseId: string): Promise<CaseData> {
@@ -50,6 +53,8 @@ export default async function ResolvePage({ params }: { params: { caseId: string
             <p className="text-3xl font-bold text-red-500">${caseData.totalAmount.toLocaleString()}</p>
           </div>
         </header>
+
+        <AdvocacyShield caseId={caseId} isFeeFrozen={caseData.isFeeFrozen} penaltyWaived={caseData.penaltyWaived} />
 
         <SettlementSelector caseId={caseId} options={options} initialStatus={caseData.status} />
 

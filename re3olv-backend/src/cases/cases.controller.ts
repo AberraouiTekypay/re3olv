@@ -1,9 +1,13 @@
 import { Controller, Get, Post, Body, Param, NotFoundException } from '@nestjs/common';
 import { CasesService } from './cases.service.js';
+import { AdvocacyBrainService } from './advocacy-brain.service.js';
 
 @Controller('cases')
 export class CasesController {
-  constructor(private readonly casesService: CasesService) {}
+  constructor(
+    private readonly casesService: CasesService,
+    private readonly advocacyBrainService: AdvocacyBrainService,
+  ) {}
 
   @Get()
   async findAll() {
@@ -31,6 +35,20 @@ export class CasesController {
   @Post(':id/resolve')
   async resolveCase(@Param('id') id: string, @Body('optionId') optionId: string) {
     const updatedCase = await this.casesService.resolveCase(id, optionId);
+    if (!updatedCase) {
+      throw new NotFoundException(`Case with ID ${id} not found`);
+    }
+    return updatedCase;
+  }
+
+  @Post(':id/hardship')
+  async processHardship(@Param('id') id: string, @Body('story') story: string) {
+    return this.advocacyBrainService.processHardshipStory(id, story);
+  }
+
+  @Post(':id/apply-advocacy')
+  async applyAdvocacy(@Param('id') id: string) {
+    const updatedCase = await this.casesService.applyAdvocacy(id);
     if (!updatedCase) {
       throw new NotFoundException(`Case with ID ${id} not found`);
     }
