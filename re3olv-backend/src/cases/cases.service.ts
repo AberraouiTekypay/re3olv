@@ -13,6 +13,12 @@ export class CasesService {
     this.prisma = new PrismaClient({ adapter });
   }
 
+  async findAll() {
+    return this.prisma.case.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async findOne(id: string) {
     return this.prisma.case.findUnique({
       where: { id },

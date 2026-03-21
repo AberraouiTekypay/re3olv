@@ -5,6 +5,11 @@ import { CasesService } from './cases.service.js';
 export class CasesController {
   constructor(private readonly casesService: CasesService) {}
 
+  @Get()
+  async findAll() {
+    return this.casesService.findAll();
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const caseData = await this.casesService.findOne(id);
