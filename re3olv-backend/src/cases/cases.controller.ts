@@ -41,6 +41,15 @@ export class CasesController {
     return updatedCase;
   }
 
+  @Post(':id/settle')
+  async settleCase(@Param('id') id: string, @Body('amount') amount: number) {
+    const updatedCase = await this.casesService.settleCase(id, amount);
+    if (!updatedCase) {
+      throw new NotFoundException(`Case with ID ${id} not found`);
+    }
+    return updatedCase;
+  }
+
   @Post(':id/chat')
   async processHardship(@Param('id') id: string, @Body('story') story: string) {
     return this.advocacyBrainService.processHardshipStory(id, story);

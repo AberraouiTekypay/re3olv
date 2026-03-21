@@ -72,6 +72,16 @@ export class CasesService {
     });
   }
 
+  async settleCase(caseId: string, amount: number) {
+    return this.prisma.case.update({
+      where: { id: caseId },
+      data: {
+        status: 'SETTLED',
+        paidAmount: amount,
+      },
+    });
+  }
+
   async startAdvocacy(caseId: string) {
     console.log(`Starting advocacy for case ${caseId}`);
     return this.prisma.case.update({
