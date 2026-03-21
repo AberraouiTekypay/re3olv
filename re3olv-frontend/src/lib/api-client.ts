@@ -6,6 +6,8 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      'x-organization-id': 'default-org',
+      'x-user-role': endpoint.includes('analytics') ? 'MANAGER' : 'AGENT',
       ...options.headers,
     },
   });
