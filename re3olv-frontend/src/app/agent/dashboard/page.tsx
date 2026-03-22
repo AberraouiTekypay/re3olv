@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { ShieldAlert, ShieldCheck, PieChart, LayoutDashboard, Download, TrendingUp, Heart, Activity, Upload } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, PieChart, LayoutDashboard, Download, TrendingUp, Heart, Activity, Upload, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';

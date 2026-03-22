@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { ShieldCheck, Wallet, ArrowRight, TrendingDown, Sparkles, Building2, Landmark, PieChart, Activity, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Wallet, ArrowRight, TrendingDown, Sparkles, Building2, Landmark, PieChart, Activity, AlertCircle, Download } from 'lucide-react';
 import { fetchApi } from '@/lib/api-client';
 import { toast } from 'sonner';
 
@@ -37,7 +37,7 @@ interface BrandingData {
   logoUrl: string;
 }
 
-export default function MyDebtsPage() {
+function MyDebtsContent() {
   const searchParams = useSearchParams();
   const caseId = searchParams.get('caseId');
   const [caseData, setCaseData] = useState<CaseData | null>(null);
@@ -246,5 +246,13 @@ export default function MyDebtsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MyDebtsPage() {
+  return (
+    <Suspense fallback={<div className="p-12 text-center font-mono">Initializing Advocacy Engine...</div>}>
+      <MyDebtsContent />
+    </Suspense>
   );
 }
