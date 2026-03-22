@@ -144,6 +144,14 @@ export default function AgentDashboardPage() {
         </div>
         <div className="flex flex-col items-end gap-4">
           <div className="flex gap-4 items-center">
+            <div className="flex items-center bg-slate-50 border border-slate-100 px-4 py-2 rounded-2xl gap-3">
+              <Globe size={16} className="text-indigo-600 animate-pulse" />
+              <div className="flex gap-1.5">
+                {['GB', 'MA', 'ES', 'FR'].map(c => (
+                  <span key={c} className="text-[10px] font-black text-slate-400 hover:text-indigo-600 cursor-pointer transition-colors" title={`${c} Hub Active`}>{c}</span>
+                ))}
+              </div>
+            </div>
             <Button variant="outline" size="sm" asChild className="gap-2 rounded-xl font-bold bg-white border-2 h-10 px-4">
               <Link href="/admin/upload"><Upload size={16} /> Bulk Ingest</Link>
             </Button>

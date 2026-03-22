@@ -12,6 +12,15 @@ datasource db {
   provider = "sqlite"
 }
 
+model RegionConfig {
+  id              String   @id @default(uuid())
+  countryCode     String   @unique // ISO 3166-1 alpha-2
+  activeAdapters  String?  // JSON: {CREDIT: 'Experian', PAYMENTS: 'Stripe', ERP: 'SAP', BANKING: 'Plaid'}
+  complianceRules String?  // JSON: {maxInterest: 15, disclosureText: '...', currency: 'MAD'}
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 model Organization {
   id                   String             @id @default(uuid())
   name                 String

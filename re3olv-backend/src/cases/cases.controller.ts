@@ -17,7 +17,22 @@ export class CasesController {
     private readonly advocacyBrainService: AdvocacyBrainService,
     private readonly linkService: LinkService,
     private readonly providerOrchestratorService: ProviderOrchestratorService,
+    private readonly integrationOrchestratorService: IntegrationOrchestratorService,
   ) {}
+
+  @Get('regions/:countryCode/config')
+  @Roles('MANAGER')
+  @ApiOperation({ summary: 'Regional: Retrieve specific country configuration' })
+  async getRegionConfig(@Param('countryCode') countryCode: string) {
+    return this.integrationOrchestratorService.getRegionConfig(countryCode);
+  }
+
+  @Post('regions/:countryCode/config')
+  @Roles('MANAGER')
+  @ApiOperation({ summary: 'Regional: Update country config (Adapters & Compliance)' })
+  async updateRegionConfig(@Param('countryCode') countryCode: string, @Body() body: any) {
+    return this.integrationOrchestratorService.updateRegionConfig(countryCode, body);
+  }
 
   @Get()
   @Roles('AGENT', 'MANAGER')

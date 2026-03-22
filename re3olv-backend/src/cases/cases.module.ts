@@ -5,10 +5,11 @@ import { AdvocacyBrainService } from './advocacy-brain.service.js';
 import { LinkService } from './link.service.js';
 import { EuropeanRegisterService } from './european-register.service.js';
 import { ProviderOrchestratorService } from './provider-orchestrator.service.js';
+import { IntegrationOrchestratorService } from './integration-orchestrator.service.js';
 
 @Module({
-  providers: [CasesService, AdvocacyBrainService, LinkService, EuropeanRegisterService, ProviderOrchestratorService],
+  providers: [CasesService, AdvocacyBrainService, LinkService, EuropeanRegisterService, ProviderOrchestratorService, IntegrationOrchestratorService],
   controllers: [CasesController],
-  exports: [CasesService, AdvocacyBrainService, LinkService, EuropeanRegisterService, ProviderOrchestratorService],
+  exports: [CasesService, AdvocacyBrainService, LinkService, EuropeanRegisterService, ProviderOrchestratorService, IntegrationOrchestratorService],
 })
 export class CasesModule {}
