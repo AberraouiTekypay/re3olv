@@ -35,9 +35,19 @@ interface ROIStats {
   recoveryVelocity: string;
 }
 
+interface AdminStats {
+  totalManagedDebt: number;
+  potentialRecovery: number;
+  portfolioHealth: number;
+  activeNegotiations: number;
+  totalWaived: number;
+  totalCases: number;
+}
+
 export default function AgentDashboardPage() {
   const [cases, setCases] = useState<CaseData[]>([]);
   const [stats, setStats] = useState<ROIStats | null>(null);
+  const [adminStats, setAdminStats] = useState<AdminStats | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'social'>('overview');
   const [filter, setFilter] = useState<'all' | 'needs-attention'>('all');
   const [loading, setLoading] = useState(true);
@@ -48,12 +58,14 @@ export default function AgentDashboardPage() {
 
   const fetchData = async () => {
     try {
-      const [casesData, statsData] = await Promise.all([
+      const [casesData, statsData, adminData] = await Promise.all([
         fetchApi<CaseData[]>('/cases'),
-        fetchApi<ROIStats>('/cases/analytics/roi')
+        fetchApi<ROIStats>('/cases/analytics/roi'),
+        fetchApi<AdminStats>('/cases/admin/stats')
       ]);
       setCases(casesData);
       setStats(statsData);
+      setAdminStats(adminData);
     } catch (error) {
       console.error('Failed to fetch data', error);
     } finally {
@@ -176,6 +188,38 @@ export default function AgentDashboardPage() {
           )}
         </div>
       </header>
+
+      {/* Market Summary Row */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <Card className="border-0 shadow-lg rounded-3xl bg-white overflow-hidden border-b-4 border-b-indigo-500">
+          <CardContent className="p-6">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Portfolio Exposure</p>
+            <h3 className="text-2xl font-black text-slate-900">${adminStats?.totalManagedDebt.toLocaleString()}</h3>
+            <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase">Principal Value</p>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-lg rounded-3xl bg-white overflow-hidden border-b-4 border-b-orange-500">
+          <CardContent className="p-6">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Active Negotiations</p>
+            <h3 className="text-2xl font-black text-slate-900">{adminStats?.activeNegotiations}</h3>
+            <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase">Live in last 24h</p>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-lg rounded-3xl bg-white overflow-hidden border-b-4 border-b-purple-500">
+          <CardContent className="p-6">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Waiver Impact</p>
+            <h3 className="text-2xl font-black text-slate-900">${adminStats?.totalWaived.toLocaleString()}</h3>
+            <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase">Nova Shield Savings</p>
+          </CardContent>
+        </Card>
+        <Card className="border-0 shadow-lg rounded-3xl bg-white overflow-hidden border-b-4 border-b-green-500">
+          <CardContent className="p-6">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Target Recovery</p>
+            <h3 className="text-2xl font-black text-slate-900">${adminStats?.potentialRecovery.toLocaleString()}</h3>
+            <p className="text-[9px] text-slate-400 font-bold mt-1 uppercase">Estimated Cashflow</p>
+          </CardContent>
+        </Card>
+      </div>
 
       {activeTab === 'overview' ? (
         <Card className="border-0 shadow-xl rounded-3xl overflow-hidden">

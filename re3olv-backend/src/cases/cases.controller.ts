@@ -167,6 +167,13 @@ export class CasesController {
     return this.casesService.getROIStats(req['orgId']);
   }
 
+  @Get('admin/stats')
+  @Roles('AGENT', 'MANAGER')
+  @ApiOperation({ summary: 'Executive Dashboard: Aggregate portfolio metrics' })
+  async getAdminStats(@Req() req: Request) {
+    return this.casesService.getAdminStats(req['orgId']);
+  }
+
   @Delete(':id')
   @Roles('MANAGER')
   @ApiOperation({ summary: 'GDPR Right to be Forgotten: Permanent data erasure' })

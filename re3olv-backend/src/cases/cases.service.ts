@@ -126,6 +126,39 @@ export class CasesService {
     return { message, magicLink };
   }
 
+  async getAdminStats(organizationId: string) {
+    const cases = await this.prisma.case.findMany({
+      where: { organizationId },
+    });
+
+    const totalManagedDebt = cases.reduce((acc, c) => acc + c.principalAmount, 0);
+    
+    // Potential Recovery: Sum of settled amounts for SETTLED, or 60% (Lump Sum) for others
+    const potentialRecovery = cases.reduce((acc, c) => {
+      if (c.status === 'SETTLED') return acc + c.paidAmount;
+      return acc + (c.totalAmount * 0.6);
+    }, 0);
+
+    const settledCount = cases.filter(c => c.status === 'SETTLED').length;
+    const openCount = cases.filter(c => c.status === 'OPEN').length;
+    const portfolioHealth = openCount > 0 ? (settledCount / (settledCount + openCount)) * 100 : 100;
+
+    // Active Negotiations: Viewed in last 24h
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const activeNegotiations = cases.filter(c => c.lastViewedAt && new Date(c.lastViewedAt) > twentyFourHoursAgo).length;
+
+    const totalWaived = cases.reduce((acc, c) => acc + (c.penaltyWaived || 0), 0);
+
+    return {
+      totalManagedDebt,
+      potentialRecovery,
+      portfolioHealth,
+      activeNegotiations,
+      totalWaived,
+      totalCases: cases.length,
+    };
+  }
+
   async findOne(id: string, organizationId?: string) {
     return this.prisma.case.findUnique({
       where: organizationId ? { id, organizationId } : { id },
