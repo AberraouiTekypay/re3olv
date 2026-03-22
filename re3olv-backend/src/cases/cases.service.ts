@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { Readable } from 'stream';
+import csv from 'csv-parser';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class CasesService {
@@ -17,6 +20,88 @@ export class CasesService {
     return this.prisma.case.findMany({
       where: organizationId ? { organizationId } : {},
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async findBatchUploads(organizationId: string) {
+    return this.prisma.batchUpload.findMany({
+      where: { organizationId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createBatchUpload(filename: string, organizationId: string) {
+    return this.prisma.batchUpload.create({
+      data: {
+        filename,
+        organizationId,
+        status: 'PROCESSING',
+      },
+    });
+  }
+
+  async processCsv(batchId: string, organizationId: string, buffer: Buffer) {
+    const results: any[] = [];
+    const stream = Readable.from(buffer);
+    let totalRows = 0;
+    let errorCount = 0;
+
+    return new Promise((resolve, reject) => {
+      stream
+        .pipe(csv())
+        .on('data', (data) => {
+          results.push(data);
+          totalRows++;
+        })
+        .on('end', async () => {
+          try {
+            for (const row of results) {
+              const borrowerName = row['Borrower Name'] || row['borrowerName'] || row['Name'];
+              const principalAmount = parseFloat(row['Amount'] || row['principalAmount'] || row['Principal'] || '0');
+              const penalty = parseFloat(row['Penalty'] || row['penalty'] || '0');
+              const totalAmount = principalAmount + penalty;
+
+              if (!borrowerName || isNaN(totalAmount)) {
+                errorCount++;
+                continue;
+              }
+
+              const magicToken = randomBytes(16).toString('hex');
+
+              await this.prisma.case.create({
+                data: {
+                  borrowerName,
+                  principalAmount,
+                  totalAmount,
+                  organizationId,
+                  batchUploadId: batchId,
+                  status: 'OPEN',
+                  magicToken,
+                  magicLinkCreatedAt: new Date(),
+                },
+              });
+            }
+
+            await this.prisma.batchUpload.update({
+              where: { id: batchId },
+              data: { status: 'COMPLETED', totalRows, errorCount },
+            });
+            resolve({ totalRows, errorCount });
+          } catch (error) {
+            await this.prisma.batchUpload.update({
+              where: { id: batchId },
+              data: { status: 'FAILED', totalRows, errorCount },
+            });
+            reject(error);
+          }
+        })
+        .on('error', async (error) => {
+          await this.prisma.batchUpload.update({
+            where: { id: batchId },
+            data: { status: 'FAILED', totalRows, errorCount },
+          });
+          reject(error);
+        });
     });
   }
 

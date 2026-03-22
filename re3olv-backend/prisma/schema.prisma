@@ -13,10 +13,11 @@ datasource db {
 }
 
 model Organization {
-  id    String @id @default(uuid())
-  name  String
-  cases Case[]
-  users User[]
+  id           String        @id @default(uuid())
+  name         String
+  cases        Case[]
+  users        User[]
+  batchUploads BatchUpload[]
 }
 
 model User {
@@ -48,6 +49,8 @@ model Case {
   nextFollowUp     DateTime?
   organizationId   String
   organization     Organization @relation(fields: [organizationId], references: [id])
+  batchUploadId    String?
+  batchUpload      BatchUpload? @relation(fields: [batchUploadId], references: [id])
   actionLogs       ActionLog[]
   chatMessages     ChatMessage[]
   externalDebts    ExternalDebt[]
@@ -57,6 +60,19 @@ model Case {
   encryptedData    String?  // For field-level encryption demo (Salary/Tokens)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+}
+
+model BatchUpload {
+  id             String       @id @default(uuid())
+  filename       String
+  status         String       @default("PROCESSING") // PROCESSING, COMPLETED, FAILED
+  totalRows      Int          @default(0)
+  errorCount     Int          @default(0)
+  cases          Case[]
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 model ComplianceAudit {

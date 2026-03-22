@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { ShieldAlert, ShieldCheck, PieChart, LayoutDashboard, Download, TrendingUp, Heart, Activity } from 'lucide-react';
+import { ShieldAlert, ShieldCheck, PieChart, LayoutDashboard, Download, TrendingUp, Heart, Activity, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
@@ -129,23 +129,28 @@ export default function AgentDashboardPage() {
           <p className="text-muted-foreground mt-2 font-medium">Multi-tenant Institutional Portfolio Management</p>
         </div>
         <div className="flex flex-col items-end gap-4">
-          <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl">
-            <Button 
-              variant={activeTab === 'overview' ? 'default' : 'ghost'} 
-              size="sm"
-              onClick={() => setActiveTab('overview')}
-              className="gap-2 rounded-xl font-bold"
-            >
-              <LayoutDashboard size={16} /> Overview
+          <div className="flex gap-4 items-center">
+            <Button variant="outline" size="sm" asChild className="gap-2 rounded-xl font-bold bg-white border-2 h-10 px-4">
+              <Link href="/admin/upload"><Upload size={16} /> Bulk Ingest</Link>
             </Button>
-            <Button 
-              variant={activeTab === 'social' ? 'default' : 'ghost'} 
-              size="sm"
-              onClick={() => setActiveTab('social')}
-              className="gap-2 rounded-xl font-bold"
-            >
-              <PieChart size={16} /> Social Impact
-            </Button>
+            <div className="flex gap-2 bg-slate-100 p-1.5 rounded-2xl">
+              <Button 
+                variant={activeTab === 'overview' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setActiveTab('overview')}
+                className="gap-2 rounded-xl font-bold"
+              >
+                <LayoutDashboard size={16} /> Overview
+              </Button>
+              <Button 
+                variant={activeTab === 'social' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setActiveTab('social')}
+                className="gap-2 rounded-xl font-bold"
+              >
+                <PieChart size={16} /> Social Impact
+              </Button>
+            </div>
           </div>
           {activeTab === 'overview' && (
             <div className="flex gap-2 bg-indigo-50/50 p-1 rounded-xl border border-indigo-100">

@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Param, NotFoundException, Query, UseGuards, Req, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, NotFoundException, Query, UseGuards, Req, Delete, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { CasesService } from './cases.service.js';
 import { AdvocacyBrainService } from './advocacy-brain.service.js';
 import { LinkService } from './link.service.js';
 import { RolesGuard } from '../auth/roles.guard.js';
 import { Roles } from '../auth/roles.decorator.js';
 import { ApiOperation, ApiResponse, ApiTags, ApiHeader } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('cases')
 @ApiHeader({ name: 'x-organization-id', description: 'Tenant Identifier' })
@@ -22,6 +23,34 @@ export class CasesController {
   @ApiOperation({ summary: 'Retrieve all cases for the tenant organization' })
   async findAll(@Req() req: Request) {
     return this.casesService.findAll(req['orgId']);
+  }
+
+  @Post('upload')
+  @Roles('AGENT', 'MANAGER')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Bulk Ingest: Process CSV for portfolio creation' })
+  async uploadCases(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request
+  ) {
+    const orgId = req['orgId'];
+    const batch = await this.casesService.createBatchUpload(file.originalname, orgId);
+    
+    // Process CSV
+    await this.casesService.processCsv(batch.id, orgId, file.buffer);
+    
+    return { 
+      success: true, 
+      batchId: batch.id,
+      message: 'Processing completed'
+    };
+  }
+
+  @Get('uploads')
+  @Roles('AGENT', 'MANAGER')
+  @ApiOperation({ summary: 'Retrieve bulk upload history' })
+  async getUploads(@Req() req: Request) {
+    return this.casesService.findBatchUploads(req['orgId']);
   }
 
   @Get(':id')
