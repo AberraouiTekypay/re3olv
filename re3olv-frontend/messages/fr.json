@@ -1,0 +1,14 @@
+{
+  "Landing": {
+    "title": "Plaidoyer Institutionnel de la Dette",
+    "subtitle": "Résoudre les dettes avec empathie et intelligence.",
+    "comingSoon": "Bientôt disponible dans votre région.",
+    "registerInterest": "S'inscrire",
+    "emailPlaceholder": "Entrez votre email",
+    "selectCountry": "Choisissez votre pays",
+    "userType": "Je suis un...",
+    "founder": "Fondateur / Propriétaire d'entreprise",
+    "lender": "Prêteur / Institution",
+    "success": "Merci ! Nous vous informerons."
+  }
+}

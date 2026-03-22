@@ -1,15 +1,14 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model RegionConfig {
@@ -175,5 +174,13 @@ model ActionLog {
   case      Case     @relation(fields: [caseId], references: [id])
   action    String   // NOVA_SHIELD_TRIGGER, MAGIC_LINK_VIEW, MANUAL_OVERRIDE
   details   String?
+  createdAt DateTime @default(now())
+}
+
+model Waitlist {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  country   String
+  userType  String   // e.g., FOUNDER, LENDER
   createdAt DateTime @default(now())
 }

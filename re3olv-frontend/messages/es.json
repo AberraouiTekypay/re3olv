@@ -1,0 +1,14 @@
+{
+  "Landing": {
+    "title": "Defensoría Institucional de la Deuda",
+    "subtitle": "Resolviendo la deuda con empatía e inteligencia.",
+    "comingSoon": "Próximamente en su región.",
+    "registerInterest": "Registrar interés",
+    "emailPlaceholder": "Ingrese su correo electrónico",
+    "selectCountry": "Seleccione su país",
+    "userType": "Soy un...",
+    "founder": "Fundador / Dueño de negocio",
+    "lender": "Prestamista / Institución",
+    "success": "¡Gracias! Te notificaremos."
+  }
+}
