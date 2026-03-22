@@ -381,16 +381,22 @@ export class CasesService {
     const singleMonthlyPayment = totalExposure * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
 
     const org = caseData.organization;
+    const isSME = caseData.isSME;
+    const subject = isSME ? `Founder ${caseData.founderName || caseData.borrowerName}` : `Business Owner ${caseData.borrowerName}`;
+
     const letterOfIntent = `
       ${org.logoUrl ? `[LOGO: ${org.logoUrl}]` : `[INSTITUTION: ${org.name}]`}
       
-      OFFICIAL LETTER OF INTENT: DEBT CONSOLIDATION & RESTRUCTURING
+      OFFICIAL LETTER OF INTENT: DEBT CONSOLIDATION & STABILITY PLAN
       
       To Whom It May Concern,
       
-      ${org.legalName || org.name}, acting as the institutional advocate for ${caseData.borrowerName}, 
+      ${org.legalName || org.name}, acting as the institutional advocate for ${subject}, 
       hereby proposes a multi-creditor consolidation of the outstanding exposure 
       totaling $${totalExposure.toLocaleString()}.
+      
+      At RE3OLV, we understand that a business is a life's work. Our mission is to stabilize 
+      both the enterprise and the founder behind it, ensuring long-term financial health.
       
       Proposed Terms:
       - Principal Buyout: $${totalExposure.toLocaleString()}
@@ -398,7 +404,7 @@ export class CasesService {
       - Tenure: 36 Months
       - Single Disbursement: Partner Bank 2026-X
       
-      This restructuring aims to improve debt sustainability and ensure recovery velocity.
+      This restructuring aims to improve cash flow for survival and ensure recovery velocity.
       
       Institutional ID: ${caseData.id}
       Date: ${new Date().toLocaleDateString()}

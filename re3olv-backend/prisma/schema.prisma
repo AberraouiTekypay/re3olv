@@ -37,6 +37,9 @@ model User {
 model Case {
   id               String   @id @default(uuid())
   borrowerName     String   @default("Anonymous")
+  isSME            Boolean  @default(false)
+  founderName      String?
+  founderImpact    String?  // How business debt affects the owner's livelihood
   principalAmount  Float    @default(0)
   paidAmount       Float    @default(0)
   totalAmount      Float

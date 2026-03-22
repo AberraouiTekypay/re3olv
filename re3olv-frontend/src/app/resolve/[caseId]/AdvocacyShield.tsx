@@ -18,9 +18,10 @@ interface AdvocacyShieldProps {
   isFeeFrozen: boolean;
   penaltyWaived: number;
   hardshipReason: string | null;
+  isSME?: boolean;
 }
 
-export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipReason }: AdvocacyShieldProps) {
+export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipReason, isSME }: AdvocacyShieldProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -41,7 +42,10 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
           setConsentGranted(true);
           setShowComplianceModal(false);
         } else {
-          setMessages([{ role: 'NOVA', content: "Hi, I'm Nova. If you're facing financial hardship, tell me your story. I might be able to freeze your fees and waive penalties instantly." }]);
+          const initialMsg = isSME 
+            ? "Hi, I'm Nova. I understand your business is your life's work. If you're facing a temporary cash flow crisis, tell me your story. I can help stabilize your business by freezing fees instantly."
+            : "Hi, I'm Nova. If you're facing financial hardship, tell me your story. I might be able to freeze your fees and waive penalties instantly.";
+          setMessages([{ role: 'NOVA', content: initialMsg }]);
         }
       } catch (error) {
         console.error('Failed to load chat history', error);
@@ -160,13 +164,13 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
       <div className="bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 p-[2px] rounded-3xl mb-12 shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-1000">
         <div className="bg-white rounded-[22px] p-8">
           <div className="flex items-start gap-6">
-            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-5 rounded-2xl shadow-xl shadow-indigo-200 shrink-0">
-              <ShieldCheck className="text-white" size={48} />
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-5 rounded-2xl shadow-xl shrink-0 border border-indigo-100">
+              <ShieldCheck className="text-indigo-600" size={48} />
             </div>
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Sparkles className="text-purple-500" size={24} />
-                <h3 className="font-black text-3xl tracking-tight text-gray-900">Advocacy Shield Active</h3>
+                <h3 className="font-black text-3xl tracking-tight text-gray-900">{isSME ? 'Business Stability Secured' : 'Advocacy Shield Active'}</h3>
               </div>
               <p className="text-xl text-gray-600 mb-6 leading-relaxed">
                 Nova's Analysis: <span className="italic font-semibold text-indigo-700">"{aiReason}"</span>
@@ -176,7 +180,7 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
                   <span className="text-lg">${penaltyWaived.toLocaleString()} Penalties Waived</span>
                 </div>
                 <div className="inline-flex items-center gap-2 bg-indigo-50 px-5 py-3 rounded-2xl border border-indigo-100 font-bold text-indigo-700 shadow-sm">
-                  <span className="text-lg">0% Interest Applied</span>
+                  <span className="text-lg">{isSME ? 'Cash Flow Stabilized' : '0% Interest Applied'}</span>
                 </div>
               </div>
             </div>

@@ -19,6 +19,10 @@ interface SettlementOption {
 
 interface CaseData {
   id: string;
+  borrowerName: string;
+  isSME: boolean;
+  founderName: string | null;
+  founderImpact: string | null;
   totalAmount: number;
   status: string;
   isFeeFrozen: boolean;
@@ -41,14 +45,21 @@ export default async function ResolvePage({ params }: { params: { caseId: string
     const caseData = await getCaseData(caseId);
     const options = await getSettlementOptions(caseId);
 
+    const title = caseData.isSME ? `Founder Stability Portal` : "Resolve Your Debt";
+    const greeting = caseData.isSME 
+      ? `We understand your business is your life's work, ${caseData.founderName || caseData.borrowerName}. Nova is here to help you stabilize both.`
+      : `Hi ${caseData.borrowerName}, I'm Nova. Let's work together to resolve your debt and secure your financial future.`;
+
     return (
       <div className="container mx-auto py-12 px-4 max-w-5xl">
         <ViewTracker caseId={caseId} />
         <header className="mb-12 text-center">
-          <h1 className="text-4xl font-bold tracking-tight mb-4">Resolve Your Debt</h1>
-          <p className="text-lg text-muted-foreground">
-            Case ID: <span className="font-mono text-primary">{caseData.id}</span>
-          </p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold mb-4">
+            <Scale size={14} /> Official {caseData.isSME ? 'SME' : 'Institutional'} Advocacy
+          </div>
+          <h1 className="text-4xl font-black tracking-tight text-gray-900 mb-2">{title}</h1>
+          <p className="text-slate-500 font-medium max-w-lg mx-auto mb-8">{greeting}</p>
+          
           <div className="mt-6 p-6 bg-muted rounded-xl inline-block">
             <p className="text-sm uppercase tracking-wider text-muted-foreground font-semibold mb-1">Total Outstanding</p>
             <p className="text-3xl font-bold text-red-500">${caseData.totalAmount.toLocaleString()}</p>
@@ -60,6 +71,7 @@ export default async function ResolvePage({ params }: { params: { caseId: string
           isFeeFrozen={caseData.isFeeFrozen} 
           penaltyWaived={caseData.penaltyWaived}
           hardshipReason={caseData.hardshipReason}
+          isSME={caseData.isSME}
         />
 
         <SettlementSelector caseId={caseId} options={options} initialStatus={caseData.status} />
