@@ -1,0 +1,19 @@
+{
+  "name": "re3olv",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.1.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  }
+}
