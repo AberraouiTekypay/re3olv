@@ -15,6 +15,16 @@
       "manifesto": "The Manifesto",
       "difference": "The Difference"
     },
+    "b2c": {
+      "title": "RE3OLV for Individuals: Dignity First.",
+      "desc": "Nova, our empathetic AI, advocates for you. We transform aggressive collection into mediated dialogue, helping you recover your credit health and financial peace.",
+      "cta": "Find Your Path"
+    },
+    "b2b": {
+      "title": "RE3OLV for Institutions: Sustainable Compliance.",
+      "desc": "We resolve institutional debt without damaging your reputation. Our platform ensures compliant, effective mediation, protecting customer relationships while securing assets.",
+      "cta": "Request a Demo"
+    },
     "manifesto": {
       "title": "The Manifesto",
       "pillar1Title": "EMPATHY BY DESIGN",

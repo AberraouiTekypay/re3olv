@@ -15,6 +15,16 @@
       "manifesto": "El Manifiesto",
       "difference": "La Diferencia"
     },
+    "b2c": {
+      "title": "RE3OLV para Personas: La Dignidad Primero.",
+      "desc": "Nova, nuestra IA empática, aboga por usted. Transformamos el cobro agresivo en un diálogo mediado, ayudándole a recuperar su salud crediticia y su paz financiera.",
+      "cta": "Encuentre su Camino"
+    },
+    "b2b": {
+      "title": "RE3OLV para Instituciones: Cumplimiento Sostenible.",
+      "desc": "Resolvemos la deuda institucional sin dañar su reputación. Nuestra plataforma garantiza una mediación eficaz y conforme, protegiendo las relaciones con los clientes mientras se aseguran los activos.",
+      "cta": "Solicitar Demo"
+    },
     "manifesto": {
       "title": "El Manifiesto",
       "pillar1Title": "EMPATÍA POR DISEÑO",

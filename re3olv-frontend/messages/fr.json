@@ -15,6 +15,16 @@
       "manifesto": "Le Manifeste",
       "difference": "La Différence"
     },
+    "b2c": {
+      "title": "RE3OLV pour les Particuliers : La Dignité d'Abord.",
+      "desc": "Nova, notre IA empathique, plaide pour vous. Nous transformons le recouvrement agressif en dialogue médié, vous aidant à retrouver votre santé de crédit et votre paix financière.",
+      "cta": "Trouvez votre Voie"
+    },
+    "b2b": {
+      "title": "RE3OLV pour les Institutions : Conformité Durable.",
+      "desc": "Nous résolvons la dette institutionnelle sans nuire à votre réputation. Notre plateforme assure une médiation conforme et efficace, protégeant les relations clients tout en sécurisant les actifs.",
+      "cta": "Demander une Démo"
+    },
     "manifesto": {
       "title": "Le Manifeste",
       "pillar1Title": "L'EMPATHIE PAR CONCEPTION",
