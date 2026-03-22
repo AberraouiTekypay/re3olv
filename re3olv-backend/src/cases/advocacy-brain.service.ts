@@ -97,7 +97,8 @@ export class AdvocacyBrainService {
             ? "I've analyzed your business cash flow and verified the stress. Applying stability measures and the maximal Shield discount now."
             : "I've analyzed your cash flow and verified your hardship. Applying the maximal Shield discount now.";
         } else if (analysis.isSMETrigger) {
-          novaResponse = `Losing momentum due to ${analysis.reason} is tough. I'm noting this as a Business Continuity Risk for the bank's waiver review and activating your Advocacy Shield.`;
+          const specificIssue = analysis.reason.toLowerCase().includes('client') ? 'Losing a key client' : (analysis.reason.toLowerCase().includes('invoice') ? 'A late invoice' : analysis.reason);
+          novaResponse = `${specificIssue} is tough. I'm noting this as a Business Continuity Risk for the bank's waiver review and activating your Advocacy Shield.`;
         } else {
           novaResponse = `I've analyzed your situation: "${analysis.reason}". I've activated the Advocacy Shield for you.`;
         }
