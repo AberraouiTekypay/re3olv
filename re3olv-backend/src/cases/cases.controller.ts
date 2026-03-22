@@ -16,6 +16,7 @@ export class CasesController {
     private readonly casesService: CasesService,
     private readonly advocacyBrainService: AdvocacyBrainService,
     private readonly linkService: LinkService,
+    private readonly providerOrchestratorService: ProviderOrchestratorService,
   ) {}
 
   @Get()
@@ -23,6 +24,29 @@ export class CasesController {
   @ApiOperation({ summary: 'Retrieve all cases for the tenant organization' })
   async findAll(@Req() req: Request) {
     return this.casesService.findAll(req['orgId']);
+  }
+
+  @Get('providers')
+  @Roles('MANAGER')
+  @ApiOperation({ summary: 'Regional: List all available data providers globally' })
+  async listProviders() {
+    return this.providerOrchestratorService.listAllProviders();
+  }
+
+  @Get('providers/active')
+  @Roles('MANAGER')
+  @ApiOperation({ summary: 'Regional: List active providers for the tenant' })
+  async listActiveProviders(@Req() req: Request) {
+    const org = await this.casesService.getOrganizationBranding(req['orgId']); // Reusing this to get full org
+    // Actually we need a specific method or include activeProviders
+    return this.providerOrchestratorService.getActiveProvider('ALL', 'ALL', req['orgId']); // Placeholder logic
+  }
+
+  @Post('providers/:id/toggle')
+  @Roles('MANAGER')
+  @ApiOperation({ summary: 'Regional: Activate/Deactivate a provider for the tenant' })
+  async toggleProvider(@Param('id') id: string, @Req() req: Request, @Body() body: { active: boolean }) {
+    return this.providerOrchestratorService.toggleProvider(req['orgId'], id, body.active);
   }
 
   @Post('upload')

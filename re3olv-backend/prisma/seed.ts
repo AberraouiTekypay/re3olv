@@ -246,6 +246,18 @@ async function main() {
     },
   });
 
+  console.log('Seeding regional providers...');
+  await prisma.providerRegistry.createMany({
+    data: [
+      { countryCode: 'UK', category: 'BUSINESS', providerName: 'Companies House' },
+      { countryCode: 'UK', category: 'CREDIT', providerName: 'Experian UK' },
+      { countryCode: 'ES', category: 'BUSINESS', providerName: 'Registro Mercantil' },
+      { countryCode: 'FR', category: 'BUSINESS', providerName: 'INSEE / Sirene' },
+      { countryCode: 'MA', category: 'BUSINESS', providerName: 'OMPIC' },
+      { countryCode: 'MA', category: 'BANKING', providerName: 'Bank Al-Maghrib' },
+    ],
+  });
+
   console.log('Seeding finished.');
 }
 
