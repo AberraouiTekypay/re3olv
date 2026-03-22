@@ -196,6 +196,20 @@ export class CasesController {
     return this.casesService.getAdminStats(req['orgId']);
   }
 
+  @Get('organization/branding')
+  @Roles('AGENT', 'MANAGER')
+  @ApiOperation({ summary: 'Branding: Retrieve tenant customization settings' })
+  async getBranding(@Req() req: Request) {
+    return this.casesService.getOrganizationBranding(req['orgId']);
+  }
+
+  @Post('organization/branding')
+  @Roles('MANAGER')
+  @ApiOperation({ summary: 'Branding: Update logo and colors for co-branded experience' })
+  async updateBranding(@Req() req: Request, @Body() body: any) {
+    return this.casesService.updateOrganizationBranding(req['orgId'], body);
+  }
+
   @Post('restructure/:id')
   @ApiOperation({ summary: 'B2B2C Engine: Consolidation & Restructuring Proposal' })
   async restructure(@Param('id') id: string) {

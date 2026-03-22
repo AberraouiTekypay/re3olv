@@ -32,11 +32,17 @@ interface RestructureData {
   numDebts: number;
 }
 
+interface BrandingData {
+  primaryColor: string;
+  logoUrl: string;
+}
+
 export default function MyDebtsPage() {
   const searchParams = useSearchParams();
   const caseId = searchParams.get('caseId');
   const [caseData, setCaseData] = useState<CaseData | null>(null);
   const [restructure, setRestructure] = useState<RestructureData | null>(null);
+  const [branding, setBranding] = useState<BrandingData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -49,11 +55,14 @@ export default function MyDebtsPage() {
 
   const fetchData = async () => {
     try {
-      const data = await fetchApi<CaseData>(`/cases/${caseId}`);
+      const [data, restData, brandData] = await Promise.all([
+        fetchApi<CaseData>(`/cases/${caseId}`),
+        fetchApi<RestructureData>(`/cases/restructure/${caseId}`, { method: 'POST' }),
+        fetchApi<BrandingData>('/cases/organization/branding')
+      ]);
       setCaseData(data);
-      
-      const restData = await fetchApi<RestructureData>(`/cases/restructure/${caseId}`, { method: 'POST' });
       setRestructure(restData);
+      setBranding(brandData);
     } catch (error) {
       toast.error('Failed to retrieve your debt portfolio');
     } finally {
@@ -71,15 +80,20 @@ export default function MyDebtsPage() {
   );
 
   const totalGlobalDebt = caseData.totalAmount + caseData.externalDebts.reduce((acc, d) => acc + d.amount, 0);
+  const primaryColor = branding?.primaryColor || '#4f46e5';
 
   return (
     <div className="container mx-auto py-12 px-4 max-w-5xl">
       <header className="mb-12">
         <div className="flex items-center gap-3 mb-2">
-          <div className="bg-indigo-600 text-white p-2 rounded-xl">
-            <Building2 size={20} />
-          </div>
-          <span className="text-xs font-black uppercase tracking-widest text-indigo-600">B2B2C Consolidation Engine</span>
+          {branding?.logoUrl ? (
+            <img src={branding.logoUrl} alt="Logo" className="h-8" />
+          ) : (
+            <div className="text-white p-2 rounded-xl" style={{ backgroundColor: primaryColor }}>
+              <Building2 size={20} />
+            </div>
+          )}
+          <span className="text-xs font-black uppercase tracking-widest" style={{ color: primaryColor }}>B2B2C Consolidation Engine</span>
         </div>
         <h1 className="text-4xl font-black tracking-tight text-gray-900">Your Debt Dashboard</h1>
         <p className="text-slate-500 font-medium">Global view of your outstanding liabilities and relief options.</p>
@@ -131,7 +145,7 @@ export default function MyDebtsPage() {
 
           <section>
             <h3 className="text-lg font-black mb-6 flex items-center gap-2">
-              <TrendingDown size={20} className="text-indigo-600" /> Debt Snowball Strategy
+              <TrendingDown size={20} style={{ color: primaryColor }} /> Debt Snowball Strategy
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[caseData, ...caseData.externalDebts].sort((a, b) => {
@@ -146,7 +160,7 @@ export default function MyDebtsPage() {
                     <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                       <span className="text-6xl font-black italic">#{idx + 1}</span>
                     </div>
-                    <p className="text-[10px] font-black text-indigo-600 uppercase mb-1 tracking-widest">Pay Next</p>
+                    <p className="text-[10px] font-black uppercase mb-1 tracking-widest" style={{ color: primaryColor }}>Pay Next</p>
                     <h4 className="font-black text-slate-900 mb-1">{name}</h4>
                     <p className="text-2xl font-black text-slate-900">${amt.toLocaleString()}</p>
                     <p className="text-[10px] text-slate-400 font-bold mt-4 uppercase">Snowball Logic: Clear smallest balances first for momentum.</p>
@@ -158,7 +172,7 @@ export default function MyDebtsPage() {
         </div>
 
         <div className="space-y-8">
-          <Card className="border-0 shadow-2xl rounded-[2.5rem] bg-indigo-600 text-white overflow-hidden relative">
+          <Card className="border-0 shadow-2xl rounded-[2.5rem] text-white overflow-hidden relative" style={{ backgroundColor: primaryColor }}>
             <div className="absolute inset-0 bg-slate-900/50 opacity-10" />
             <CardHeader className="relative z-10">
               <div className="bg-white/10 w-fit p-3 rounded-2xl mb-4">
@@ -190,7 +204,7 @@ export default function MyDebtsPage() {
                 </div>
               </div>
 
-              <Button className="w-full h-14 bg-white text-indigo-600 hover:bg-slate-100 rounded-2xl font-black uppercase tracking-tighter shadow-2xl shadow-indigo-950/50 flex gap-2">
+              <Button className="w-full h-14 bg-white hover:bg-slate-100 rounded-2xl font-black uppercase tracking-tighter shadow-2xl flex gap-2" style={{ color: primaryColor }}>
                 Apply for Consolidation <ArrowRight size={18} />
               </Button>
               <Button 
@@ -211,7 +225,7 @@ export default function MyDebtsPage() {
           <Card className="border-0 shadow-xl rounded-3xl bg-white overflow-hidden border border-slate-100">
             <CardHeader className="border-b border-slate-50">
               <CardTitle className="text-gray-900 text-sm font-black uppercase tracking-widest flex items-center gap-2">
-                <PieChart size={16} className="text-indigo-600" /> Portfolio Health
+                <PieChart size={16} style={{ color: primaryColor }} /> Portfolio Health
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">

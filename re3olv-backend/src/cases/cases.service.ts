@@ -339,10 +339,34 @@ export class CasesService {
     });
   }
 
+  async getOrganizationBranding(organizationId: string) {
+    return this.prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: {
+        logoUrl: true,
+        primaryColor: true,
+        secondaryColor: true,
+        legalName: true,
+        supportEmail: true,
+        regulatoryDisclaimer: true,
+      }
+    });
+  }
+
+  async updateOrganizationBranding(organizationId: string, data: any) {
+    return this.prisma.organization.update({
+      where: { id: organizationId },
+      data,
+    });
+  }
+
   async restructureDebt(caseId: string) {
     const caseData = await this.prisma.case.findUnique({
       where: { id: caseId },
-      include: { externalDebts: true },
+      include: { 
+        externalDebts: true,
+        organization: true,
+      },
     });
 
     if (!caseData) return null;
@@ -356,12 +380,15 @@ export class CasesService {
     const months = 36;
     const singleMonthlyPayment = totalExposure * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
 
+    const org = caseData.organization;
     const letterOfIntent = `
+      ${org.logoUrl ? `[LOGO: ${org.logoUrl}]` : `[INSTITUTION: ${org.name}]`}
+      
       OFFICIAL LETTER OF INTENT: DEBT CONSOLIDATION & RESTRUCTURING
       
       To Whom It May Concern,
       
-      RE3OLV, acting as the institutional advocate for ${caseData.borrowerName}, 
+      ${org.legalName || org.name}, acting as the institutional advocate for ${caseData.borrowerName}, 
       hereby proposes a multi-creditor consolidation of the outstanding exposure 
       totaling $${totalExposure.toLocaleString()}.
       
@@ -375,6 +402,10 @@ export class CasesService {
       
       Institutional ID: ${caseData.id}
       Date: ${new Date().toLocaleDateString()}
+
+      --------------------------------------------------
+      SUPPORT: ${org.supportEmail || 'support@re3olv.ai'}
+      REGULATORY: ${org.regulatoryDisclaimer}
     `;
 
     return {
@@ -383,6 +414,10 @@ export class CasesService {
       letterOfIntent,
       savingsPerMonth: (totalExposure * 0.025) - singleMonthlyPayment, // vs 30% APR (approx 2.5% monthly)
       numDebts: caseData.externalDebts.length + 1,
+      branding: {
+        primaryColor: org.primaryColor,
+        secondaryColor: org.secondaryColor,
+      }
     };
   }
 
