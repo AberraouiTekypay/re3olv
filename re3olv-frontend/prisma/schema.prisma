@@ -9,7 +9,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgres://localhost:5432/placeholder"
+  url      = "postgresql://placeholder:5432/db"
 }
 
 model RegionConfig {
