@@ -1,14 +1,41 @@
 {
   "Landing": {
-    "title": "Institutional Debt Advocacy",
-    "subtitle": "Resolving debt with empathy and intelligence.",
-    "comingSoon": "Coming Soon to your region.",
+    "title": "Finance with a Pulse.",
+    "subtitle": "Revolutionizing institutional debt through empathetic AI and human-centric advocacy. Join the movement toward a more equitable financial future.",
+    "comingSoon": "The New Standard in Debt Resolution",
     "registerInterest": "Register Interest",
     "emailPlaceholder": "Enter your email",
     "selectCountry": "Select your country",
     "userType": "I am a...",
     "founder": "Founder / Business Owner",
     "lender": "Lender / Institution",
-    "success": "Thank you! We will notify you."
+    "success": "Thank you! We will notify you.",
+    "navigation": {
+      "philosophy": "Our Philosophy",
+      "manifesto": "The Manifesto",
+      "difference": "The Difference"
+    },
+    "manifesto": {
+      "title": "The Manifesto",
+      "pillar1Title": "EMPATHY BY DESIGN",
+      "pillar1Desc": "AI (Nova) that listens before it acts. We prioritize the human story over the ledger entry.",
+      "pillar2Title": "RADICAL TRANSPARENCY",
+      "pillar2Desc": "Clear paths to resolution with no legal jargon. We believe clarity is the foundation of trust.",
+      "pillar3Title": "SUSTAINABLE RECOVERY",
+      "pillar3Desc": "Focus on credit rehabilitation, not just one-time payment. We solve for the long-term health of the borrower."
+    },
+    "difference": {
+      "title": "The RE3OLV Difference",
+      "oldLabel": "Traditional Collection",
+      "newLabel": "RE3OLV Advocacy",
+      "old1": "Aggressive calls & legal threats",
+      "new1": "Mediated AI dialogue with Nova",
+      "old2": "Rigid, fixed systems",
+      "new2": "Flexible, empathetic advocacy",
+      "old3": "High-stress psychological toll",
+      "new3": "Dignified resolution experience",
+      "old4": "Long-term credit damage",
+      "new4": "Clear path to financial health"
+    }
   }
 }

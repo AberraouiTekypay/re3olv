@@ -1,14 +1,41 @@
 {
   "Landing": {
-    "title": "Defensoría Institucional de la Deuda",
-    "subtitle": "Resolviendo la deuda con empatía e inteligencia.",
-    "comingSoon": "Próximamente en su región.",
+    "title": "Finanzas con Pulso.",
+    "subtitle": "Revolucionando la deuda institucional a través de una IA empática y una defensa centrada en el ser humano. Únase al movimiento hacia un futuro financiero más equitativo.",
+    "comingSoon": "El Nuevo Estándar en Resolución de Deuda",
     "registerInterest": "Registrar interés",
     "emailPlaceholder": "Ingrese su correo electrónico",
     "selectCountry": "Seleccione su país",
     "userType": "Soy un...",
     "founder": "Fundador / Dueño de negocio",
     "lender": "Prestamista / Institución",
-    "success": "¡Gracias! Te notificaremos."
+    "success": "¡Gracias! Te notificaremos.",
+    "navigation": {
+      "philosophy": "Nuestra Filosofía",
+      "manifesto": "El Manifiesto",
+      "difference": "La Diferencia"
+    },
+    "manifesto": {
+      "title": "El Manifiesto",
+      "pillar1Title": "EMPATÍA POR DISEÑO",
+      "pillar1Desc": "IA (Nova) que escucha antes de actuar. Priorizamos la historia humana sobre el asiento contable.",
+      "pillar2Title": "TRANSPARENCIA RADICAL",
+      "pillar2Desc": "Caminos claros hacia la resolución sin jerga legal. Creemos que la claridad es la base de la confianza.",
+      "pillar3Title": "RECUPERACIÓN SOSTENIBLE",
+      "pillar3Desc": "Enfoque en la rehabilitación crediticia, no solo en un pago único. Resolvemos para la salud a largo plazo."
+    },
+    "difference": {
+      "title": "La Diferencia RE3OLV",
+      "oldLabel": "Cobro Tradicional",
+      "newLabel": "Defensoría RE3OLV",
+      "old1": "Llamadas agresivas y amenazas legales",
+      "new1": "Diálogo mediado por IA con Nova",
+      "old2": "Sistemas rígidos y fijos",
+      "new2": "Defensoría flexible y empática",
+      "old3": "Alto nivel de estrés psicológico",
+      "new3": "Experiencia de resolución digna",
+      "old4": "Daño crediticio a largo plazo",
+      "new4": "Camino claro hacia la salud financiera"
+    }
   }
 }

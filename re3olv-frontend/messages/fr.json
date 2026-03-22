@@ -1,14 +1,41 @@
 {
   "Landing": {
-    "title": "Plaidoyer Institutionnel de la Dette",
-    "subtitle": "Résoudre les dettes avec empathie et intelligence.",
-    "comingSoon": "Bientôt disponible dans votre région.",
+    "title": "La Finance avec un Cœur.",
+    "subtitle": "Révolutionner la dette institutionnelle grâce à une IA empathique et un plaidoyer centré sur l'humain. Rejoignez le mouvement vers un avenir financier plus équitable.",
+    "comingSoon": "Le Nouveau Standard de Résolution de Dette",
     "registerInterest": "S'inscrire",
     "emailPlaceholder": "Entrez votre email",
     "selectCountry": "Choisissez votre pays",
     "userType": "Je suis un...",
     "founder": "Fondateur / Propriétaire d'entreprise",
     "lender": "Prêteur / Institution",
-    "success": "Merci ! Nous vous informerons."
+    "success": "Merci ! Nous vous informerons.",
+    "navigation": {
+      "philosophy": "Notre Philosophie",
+      "manifesto": "Le Manifeste",
+      "difference": "La Différence"
+    },
+    "manifesto": {
+      "title": "Le Manifeste",
+      "pillar1Title": "L'EMPATHIE PAR CONCEPTION",
+      "pillar1Desc": "Une IA (Nova) qui écoute avant d'agir. Nous privilégions l'histoire humaine avant l'entrée comptable.",
+      "pillar2Title": "TRANSPARENCE RADICALE",
+      "pillar2Desc": "Des voies claires vers la résolution sans jargon juridique. La clarté est le fondement de la confiance.",
+      "pillar3Title": "RECOUVREMENT DURABLE",
+      "pillar3Desc": "Priorité à la réhabilitation du crédit, pas seulement au paiement unique. Nous visons la santé à long terme."
+    },
+    "difference": {
+      "title": "La Différence RE3OLV",
+      "oldLabel": "Recouvrement Traditionnel",
+      "newLabel": "Plaidoyer RE3OLV",
+      "old1": "Appels agressifs et menaces",
+      "new1": "Dialogue médié par l'IA avec Nova",
+      "old2": "Systèmes rigides et figés",
+      "new2": "Plaidoyer flexible et empathique",
+      "old3": "Stress psychologique intense",
+      "new3": "Expérience de résolution digne",
+      "old4": "Dommages au crédit à long terme",
+      "new4": "Voie claire vers la santé financière"
+    }
   }
 }
