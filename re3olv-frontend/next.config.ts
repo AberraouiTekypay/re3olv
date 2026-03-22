@@ -6,9 +6,6 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
-  experimental: {
-    ppr: true,
-  },
 };
 
 export default withNextIntl(nextConfig);
