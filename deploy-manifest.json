@@ -1,0 +1,32 @@
+{
+  "project": "Re3olv",
+  "version": "1.0.0",
+  "infrastructure": {
+    "regions": [
+      {
+        "id": "af-south-1",
+        "city": "Cape Town",
+        "purpose": "South Africa (ZA) Data Sovereignty",
+        "services": ["Next.js Edge", "RDS-SQLite-Sync", "Gemini-Advocacy"]
+      },
+      {
+        "id": "eu-central-1",
+        "city": "Frankfurt",
+        "purpose": "EU/MA Data Residency (GDPR/CNDP)",
+        "services": ["Next.js Edge", "RDS-Postgres-Primary", "Gemini-Advocacy"]
+      }
+    ],
+    "pinning": {
+      "/za": "af-south-1",
+      "/ma": "eu-central-1",
+      "/fr": "eu-central-1",
+      "/es": "eu-central-1"
+    }
+  },
+  "compliance": {
+    "za": ["NCR", "POPIA"],
+    "fr": ["GDPR", "CNIL", "CCD2"],
+    "es": ["Bank of Spain"],
+    "ma": ["CNDP"]
+  }
+}

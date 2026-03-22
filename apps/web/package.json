@@ -12,6 +12,8 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
+    "@re3olv/jurisdiction": "workspace:*",
+    "@re3olv/ui": "workspace:*",
     "@prisma/client": "^7.5.0",
     "@prisma/config": "^7.5.0",
     "class-variance-authority": "^0.7.1",

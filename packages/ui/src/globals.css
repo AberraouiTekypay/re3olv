@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-navy: #1A237E;
+  --color-brand-slate: #475569;
+  --color-brand-light: #F8FAFC;
+}
+
+@layer base {
+  :root {
+    --brand-navy: 26 35 126;
+    --brand-slate: 71 85 105;
+  }
+
+  body {
+    @apply bg-brand-light text-brand-slate font-sans antialiased;
+  }
+}
+
+@layer components {
+  .glassmorphism {
+    @apply bg-white/30 backdrop-blur-md border border-white/20 shadow-lg rounded-xl;
+  }
+
+  .card-institutional {
+    @apply glassmorphism p-6 border-brand-navy/10;
+  }
+
+  .btn-institutional {
+    @apply bg-brand-navy text-white px-6 py-2 rounded-lg hover:bg-brand-navy/90 transition-all shadow-md active:scale-95;
+  }
+}
