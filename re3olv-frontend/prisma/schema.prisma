@@ -9,7 +9,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://placeholder:5432/db"
+  // url is now handled by prisma.config.ts
 }
 
 model RegionConfig {
