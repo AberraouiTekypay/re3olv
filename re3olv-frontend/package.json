@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npx prisma generate && next build",
-    "vercel-build": "npm install --include=dev && npx prisma generate && next build",
+    "build": "npx prisma generate --schema=../re3olv-backend/prisma/schema.prisma && npx prisma migrate deploy --schema=../re3olv-backend/prisma/schema.prisma && next build",
+    "vercel-build": "npm install --include=dev && npx prisma generate --schema=../re3olv-backend/prisma/schema.prisma && next build",
     "start": "next start",
     "lint": "eslint"
   },
