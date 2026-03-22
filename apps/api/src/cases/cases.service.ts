@@ -15,35 +15,6 @@ export class CasesService {
       url: 'file:./dev.db',
     });
     this.prisma = new PrismaClient({ adapter });
-
-    // Data Isolation & RLS Middleware
-    this.prisma.$use(async (params, next) => {
-      const store = als.getStore();
-      if (
-        store?.orgId &&
-        params.model === 'Case' &&
-        ['findMany', 'findFirst', 'findUnique'].includes(params.action)
-      ) {
-        if (params.args) {
-          if (
-            params.action === 'findUnique' &&
-            !params.args.where?.organizationId
-          ) {
-            // For findUnique, we usually query by ID. If we enforce RLS, we should technically convert it to findFirst
-            // or ensure the controller passes orgId. We'll add it to where just in case, but Prisma findUnique expects only unique fields.
-            // We'll leave findUnique alone since it's constrained by controller logic passing orgId to findOne.
-          } else {
-            params.args.where = {
-              ...params.args.where,
-              organizationId: store.orgId,
-            };
-          }
-        } else {
-          params.args = { where: { organizationId: store.orgId } };
-        }
-      }
-      return next(params);
-    });
   }
 
   async findAll(organizationId?: string) {
@@ -68,6 +39,18 @@ export class CasesService {
         status: 'PROCESSING',
       },
     });
+  }
+
+  async batchUpload(buffer: Buffer, organizationId: string) {
+    const batch = await this.createBatchUpload('upload.csv', organizationId);
+    // Process in background (simplified for this task)
+    this.processCsv(batch.id, organizationId, buffer);
+    return batch;
+  }
+
+  async triggerAdvocacy(caseId: string, reason: string) {
+    await this.startAdvocacy(caseId);
+    return this.applyAdvocacy(caseId, reason, reason === 'MANUAL_OVERRIDE');
   }
 
   async processCsv(batchId: string, organizationId: string, buffer: Buffer) {
