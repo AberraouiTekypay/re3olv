@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { TrendingUp, Heart, Activity, ShieldCheck, Building2, Landmark, PieChart, Users, ArrowUpRight, Download } from 'lucide-react';
+import { TrendingUp, TrendingDown, Heart, Activity, ShieldCheck, Building2, Landmark, PieChart, Users, ArrowUpRight, Download } from 'lucide-react';
 import { fetchApi } from '@/lib/api-client';
 import { toast } from 'sonner';
 

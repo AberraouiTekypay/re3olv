@@ -1,9 +1,9 @@
-// Proxy configuration for production deployment
-// Renamed from middleware.ts as requested for custom routing logic
-export const config = {
-  runtime: 'nodejs',
-};
+import createMiddleware from 'next-intl/middleware';
+import {routing} from './i18n/routing';
 
-export default function proxy() {
-  console.log('RE3OLV Edge Proxy Active');
-}
+export default createMiddleware(routing);
+
+export const config = {
+  // Match only internationalized pathnames
+  matcher: ['/', '/(fr|es|en)/:path*']
+};
