@@ -339,6 +339,53 @@ export class CasesService {
     });
   }
 
+  async restructureDebt(caseId: string) {
+    const caseData = await this.prisma.case.findUnique({
+      where: { id: caseId },
+      include: { externalDebts: true },
+    });
+
+    if (!caseData) return null;
+
+    const mfiDebt = caseData.totalAmount;
+    const externalDebtTotal = caseData.externalDebts.reduce((acc, d) => acc + d.amount, 0);
+    const totalExposure = mfiDebt + externalDebtTotal;
+
+    // Consolidation Math: 12% APR (0.01 monthly), 36 months
+    const monthlyRate = 0.12 / 12;
+    const months = 36;
+    const singleMonthlyPayment = totalExposure * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+
+    const letterOfIntent = `
+      OFFICIAL LETTER OF INTENT: DEBT CONSOLIDATION & RESTRUCTURING
+      
+      To Whom It May Concern,
+      
+      RE3OLV, acting as the institutional advocate for ${caseData.borrowerName}, 
+      hereby proposes a multi-creditor consolidation of the outstanding exposure 
+      totaling $${totalExposure.toLocaleString()}.
+      
+      Proposed Terms:
+      - Principal Buyout: $${totalExposure.toLocaleString()}
+      - Restructured Rate: 12.0% Fixed APR
+      - Tenure: 36 Months
+      - Single Disbursement: Partner Bank 2026-X
+      
+      This restructuring aims to improve debt sustainability and ensure recovery velocity.
+      
+      Institutional ID: ${caseData.id}
+      Date: ${new Date().toLocaleDateString()}
+    `;
+
+    return {
+      totalExposure,
+      singleMonthlyPayment,
+      letterOfIntent,
+      savingsPerMonth: (totalExposure * 0.025) - singleMonthlyPayment, // vs 30% APR (approx 2.5% monthly)
+      numDebts: caseData.externalDebts.length + 1,
+    };
+  }
+
   async deleteCaseData(caseId: string) {
     // GDPR 'Right to be Forgotten' - Cascade deletion handled by relations
     return this.prisma.case.delete({

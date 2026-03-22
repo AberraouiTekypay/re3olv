@@ -174,6 +174,16 @@ export class CasesController {
     return this.casesService.getAdminStats(req['orgId']);
   }
 
+  @Post('restructure/:id')
+  @ApiOperation({ summary: 'B2B2C Engine: Consolidation & Restructuring Proposal' })
+  async restructure(@Param('id') id: string) {
+    const result = await this.casesService.restructureDebt(id);
+    if (!result) {
+      throw new NotFoundException(`Case with ID ${id} not found`);
+    }
+    return result;
+  }
+
   @Delete(':id')
   @Roles('MANAGER')
   @ApiOperation({ summary: 'GDPR Right to be Forgotten: Permanent data erasure' })
