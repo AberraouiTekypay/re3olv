@@ -18,7 +18,7 @@ export class AdvocacyBrainService {
   ) {
     const apiKey = process.env.GEMINI_API_KEY || '';
     this.genAI = new GoogleGenerativeAI(apiKey);
-    
+
     const adapter = new PrismaBetterSqlite3({
       url: 'file:./dev.db',
     });
@@ -34,17 +34,18 @@ export class AdvocacyBrainService {
         caseId,
         sender: 'USER',
         content: story,
-      }
+      },
     });
 
     const caseData = await this.casesService.findOne(caseId);
     const isSME = caseData?.isSME || false;
     const isVerified = caseData?.isVerified || false;
-    const verificationMethod = caseData?.verificationMethod || 'OFFICIAL_REGISTER';
+    const verificationMethod =
+      caseData?.verificationMethod || 'OFFICIAL_REGISTER';
 
     const model = this.genAI.getGenerativeModel({ model: 'gemini-3-flash' });
 
-    const prompt = isSME 
+    const prompt = isSME
       ? `
       Act as a Founder Advocate and Debt Counselor.
       The user is an Entrepreneur / Business Owner.
@@ -67,14 +68,18 @@ export class AdvocacyBrainService {
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       this.logger.log(`AI Text Output: ${text}`);
 
-      let analysis = { hardshipDetected: false, reason: '', isSMETrigger: false };
-      let novaResponse = isSME 
+      let analysis = {
+        hardshipDetected: false,
+        reason: '',
+        isSMETrigger: false,
+      };
+      let novaResponse = isSME
         ? "I understand your business is your life's work. I couldn't detect a specific qualifying hardship yet, but if you have details on client defaults or payroll stress, please share."
         : "I'm sorry to hear that, but I couldn't detect a specific qualifying hardship in your story. If you have more details about job loss or illness, please let me know.";
-      
+
       if (text.toLowerCase().includes('false') && !isVerified) {
         analysis.hardshipDetected = false;
       } else {
@@ -82,31 +87,42 @@ export class AdvocacyBrainService {
         if (jsonMatch) {
           analysis = JSON.parse(jsonMatch[0]);
         } else if (isVerified) {
-          analysis = { hardshipDetected: true, reason: 'Financial hardship verified via Open Banking cash flow analysis.', isSMETrigger: false };
+          analysis = {
+            hardshipDetected: true,
+            reason:
+              'Financial hardship verified via Open Banking cash flow analysis.',
+            isSMETrigger: false,
+          };
         }
       }
 
       this.logger.log(`Parsed Analysis result: ${JSON.stringify(analysis)}`);
 
       if (analysis.hardshipDetected || isVerified) {
-        this.logger.log(`Hardship detected for case ${caseId}. Applying Advocacy Shield automatically...`);
+        this.logger.log(
+          `Hardship detected for case ${caseId}. Applying Advocacy Shield automatically...`,
+        );
         await this.casesService.applyAdvocacy(caseId, analysis.reason);
-        
+
         // Log for Compliance Audit
         await this.casesService.logComplianceAction(
-          caseId, 
-          'SHIELD_ACTIVATION', 
-          `Hardship detected via AI reasoning: ${analysis.reason}. Verified: ${isVerified}. SME: ${isSME}. Method: ${verificationMethod}`
+          caseId,
+          'SHIELD_ACTIVATION',
+          `Hardship detected via AI reasoning: ${analysis.reason}. Verified: ${isVerified}. SME: ${isSME}. Method: ${verificationMethod}`,
         );
 
         if (isVerified) {
-          novaResponse = isSME 
-            ? (verificationMethod === 'OFFICIAL_REGISTER' 
-                ? "Your official registry data has been verified. I've initiated formal stability protocols and applied the institutional waiver suite." 
-                : "I've analyzed your business cash flow and verified the stress. Applying stability measures and the maximal Shield discount now.")
+          novaResponse = isSME
+            ? verificationMethod === 'OFFICIAL_REGISTER'
+              ? "Your official registry data has been verified. I've initiated formal stability protocols and applied the institutional waiver suite."
+              : "I've analyzed your business cash flow and verified the stress. Applying stability measures and the maximal Shield discount now."
             : "I've analyzed your cash flow and verified your hardship. Applying the maximal Shield discount now.";
         } else if (analysis.isSMETrigger) {
-          const specificIssue = analysis.reason.toLowerCase().includes('client') ? 'Losing a key client' : (analysis.reason.toLowerCase().includes('invoice') ? 'A late invoice' : analysis.reason);
+          const specificIssue = analysis.reason.toLowerCase().includes('client')
+            ? 'Losing a key client'
+            : analysis.reason.toLowerCase().includes('invoice')
+              ? 'A late invoice'
+              : analysis.reason;
           novaResponse = `${specificIssue} is tough. I'm noting this as a Business Continuity Risk for the bank's waiver review and activating your Advocacy Shield.`;
         } else {
           novaResponse = `I've analyzed your situation: "${analysis.reason}". I've activated the Advocacy Shield for you.`;
@@ -119,7 +135,19 @@ export class AdvocacyBrainService {
           caseId,
           sender: 'NOVA',
           content: novaResponse,
-        }
+        },
+      });
+
+      // Audit Trail
+      await this.prisma.decisionLog.create({
+        data: {
+          caseId,
+          decisionType: analysis.hardshipDetected
+            ? 'SHIELD_ACTIVATION'
+            : 'AWAITING_MORE_INFO',
+          aiConfidence: 0.95, // Mocked confidence
+          humanReviewerId: null,
+        },
       });
 
       return analysis;

@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY, UserRole } from './roles.decorator.js';
 
@@ -7,10 +12,10 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     const request = context.switchToHttp().getRequest();
     const userRole = request.headers['x-user-role'] as UserRole;
@@ -27,12 +32,16 @@ export class RolesGuard implements CanActivate {
 
     // Strict institutional enforcement
     if (!orgId) {
-      throw new ForbiddenException('Institutional access requires an Organization ID');
+      throw new ForbiddenException(
+        'Institutional access requires an Organization ID',
+      );
     }
 
     // Role check
     if (!userRole || !requiredRoles.includes(userRole)) {
-      throw new ForbiddenException(`Insufficient permissions: ${requiredRoles.join('/')} required`);
+      throw new ForbiddenException(
+        `Insufficient permissions: ${requiredRoles.join('/')} required`,
+      );
     }
 
     return true;

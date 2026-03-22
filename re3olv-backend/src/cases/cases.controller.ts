@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Body, Param, NotFoundException, Query, UseGuards, Req, Delete, UseInterceptors, UploadedFile } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  NotFoundException,
+  Query,
+  UseGuards,
+  Req,
+  Delete,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
 import { CasesService } from './cases.service.js';
 import { AdvocacyBrainService } from './advocacy-brain.service.js';
 import { LinkService } from './link.service.js';
@@ -22,7 +35,9 @@ export class CasesController {
 
   @Get('regions/:countryCode/config')
   @Roles('MANAGER')
-  @ApiOperation({ summary: 'Regional: Retrieve specific country configuration' })
+  @ApiOperation({
+    summary: 'Regional: Retrieve specific country configuration',
+  })
   async getRegionConfig(@Param('countryCode') countryCode: string) {
     return this.integrationOrchestratorService.getRegionConfig(countryCode);
   }
@@ -30,8 +45,16 @@ export class CasesController {
   @Post('regions/:countryCode/config')
   @Roles('MANAGER')
   @ApiOperation({ summary: 'Regional: Update country config (Adapters & Compliance)' })
-  async updateRegionConfig(@Param('countryCode') countryCode: string, @Body() body: any) {
-    return this.integrationOrchestratorService.updateRegionConfig(countryCode, body);
+  async updateRegionConfig(
+    @Param('countryCode') countryCode: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    @Body() body: any,
+  ) {
+    return this.integrationOrchestratorService.updateRegionConfig(
+      countryCode,
+      body,
+    );
   }
 
   @Get()
@@ -43,7 +66,9 @@ export class CasesController {
 
   @Get('providers')
   @Roles('MANAGER')
-  @ApiOperation({ summary: 'Regional: List all available data providers globally' })
+  @ApiOperation({
+    summary: 'Regional: List all available data providers globally',
+  })
   async listProviders() {
     return this.providerOrchestratorService.listAllProviders();
   }
@@ -54,14 +79,28 @@ export class CasesController {
   async listActiveProviders(@Req() req: Request) {
     const org = await this.casesService.getOrganizationBranding(req['orgId']); // Reusing this to get full org
     // Actually we need a specific method or include activeProviders
-    return this.providerOrchestratorService.getActiveProvider('ALL', 'ALL', req['orgId']); // Placeholder logic
+    return this.providerOrchestratorService.getActiveProvider(
+      'ALL',
+      'ALL',
+      req['orgId'],
+    ); // Placeholder logic
   }
 
   @Post('providers/:id/toggle')
   @Roles('MANAGER')
-  @ApiOperation({ summary: 'Regional: Activate/Deactivate a provider for the tenant' })
-  async toggleProvider(@Param('id') id: string, @Req() req: Request, @Body() body: { active: boolean }) {
-    return this.providerOrchestratorService.toggleProvider(req['orgId'], id, body.active);
+  @ApiOperation({
+    summary: 'Regional: Activate/Deactivate a provider for the tenant',
+  })
+  async toggleProvider(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Body() body: { active: boolean },
+  ) {
+    return this.providerOrchestratorService.toggleProvider(
+      req['orgId'],
+      id,
+      body.active,
+    );
   }
 
   @Post('upload')
@@ -70,18 +109,21 @@ export class CasesController {
   @ApiOperation({ summary: 'Bulk Ingest: Process CSV for portfolio creation' })
   async uploadCases(
     @UploadedFile() file: Express.Multer.File,
-    @Req() req: Request
+    @Req() req: Request,
   ) {
     const orgId = req['orgId'];
-    const batch = await this.casesService.createBatchUpload(file.originalname, orgId);
-    
+    const batch = await this.casesService.createBatchUpload(
+      file.originalname,
+      orgId,
+    );
+
     // Process CSV
     await this.casesService.processCsv(batch.id, orgId, file.buffer);
-    
-    return { 
-      success: true, 
+
+    return {
+      success: true,
       batchId: batch.id,
-      message: 'Processing completed'
+      message: 'Processing completed',
     };
   }
 
@@ -94,7 +136,9 @@ export class CasesController {
 
   @Post(':id/nudge')
   @Roles('AGENT')
-  @ApiOperation({ summary: 'Outreach: Generate personalized nudge message and track action' })
+  @ApiOperation({
+    summary: 'Outreach: Generate personalized nudge message and track action',
+  })
   async nudgeCase(@Param('id') id: string) {
     const result = await this.casesService.nudgeCase(id);
     if (!result) {
@@ -116,7 +160,11 @@ export class CasesController {
 
   @Get(':id/offer-pdf')
   @ApiOperation({ summary: 'Download Restructuring Offer Letter (PDF/TXT)' })
-  async downloadOffer(@Param('id') id: string, @Req() req: any, @Body() body: any) {
+  async downloadOffer(
+    @Param('id') id: string,
+    @Req() req: any,
+    @Body() body: any,
+  ) {
     const result = await this.casesService.generateOfferPdf(id);
     if (!result) {
       throw new NotFoundException(`Case with ID ${id} not found`);
@@ -128,18 +176,25 @@ export class CasesController {
   @Get(':id')
   @Roles('AGENT', 'MANAGER')
   @ApiOperation({ summary: 'Retrieve full 360-degree case data' })
-  @ApiResponse({ status: 200, description: 'Includes action logs, chat history, and external debts' })
+  @ApiResponse({
+    status: 200,
+    description: 'Includes action logs, chat history, and external debts',
+  })
   async findOne(@Param('id') id: string, @Req() req: Request) {
     const caseData = await this.casesService.findOne(id, req['orgId']);
     if (!caseData) {
-      throw new NotFoundException(`Case with ID ${id} not found in your organization`);
+      throw new NotFoundException(
+        `Case with ID ${id} not found in your organization`,
+      );
     }
     return caseData;
   }
 
   @Get(':id/magic-link')
   @Roles('AGENT', 'MANAGER')
-  @ApiOperation({ summary: 'Generate a secure, expiring token for borrower outreach' })
+  @ApiOperation({
+    summary: 'Generate a secure, expiring token for borrower outreach',
+  })
   async generateMagicLink(@Param('id') id: string) {
     return this.linkService.generateMagicLink(id);
   }
@@ -157,7 +212,9 @@ export class CasesController {
   }
 
   @Get(':id/options')
-  @ApiOperation({ summary: 'Retrieve dynamic settlement options based on hardship' })
+  @ApiOperation({
+    summary: 'Retrieve dynamic settlement options based on hardship',
+  })
   async getOptions(@Param('id') id: string) {
     // Portal options are public
     const options = await this.casesService.getSettlementOptions(id);
@@ -169,7 +226,10 @@ export class CasesController {
 
   @Post(':id/resolve')
   @ApiOperation({ summary: 'Submit a settlement plan selection' })
-  async resolveCase(@Param('id') id: string, @Body('optionId') optionId: string) {
+  async resolveCase(
+    @Param('id') id: string,
+    @Body('optionId') optionId: string,
+  ) {
     const updatedCase = await this.casesService.resolveCase(id, optionId);
     if (!updatedCase) {
       throw new NotFoundException(`Case with ID ${id} not found`);
@@ -188,13 +248,17 @@ export class CasesController {
   }
 
   @Post(':id/chat')
-  @ApiOperation({ summary: 'Nova Advocacy Brain: Process hardship story via Gemini AI' })
+  @ApiOperation({
+    summary: 'Nova Advocacy Brain: Process hardship story via Gemini AI',
+  })
   async processHardship(@Param('id') id: string, @Body('story') story: string) {
     return this.advocacyBrainService.processHardshipStory(id, story);
   }
 
   @Get(':id/chat-history')
-  @ApiOperation({ summary: 'Retrieve full dialogue transcript for rehydration' })
+  @ApiOperation({
+    summary: 'Retrieve full dialogue transcript for rehydration',
+  })
   async getChatHistory(@Param('id') id: string) {
     return this.casesService.getChatHistory(id);
   }
@@ -203,7 +267,11 @@ export class CasesController {
   @Roles('AGENT')
   @ApiOperation({ summary: 'Manual override: Force activate Advocacy Shield' })
   async applyAdvocacy(@Param('id') id: string) {
-    const updatedCase = await this.casesService.applyAdvocacy(id, 'Manual intervention', true);
+    const updatedCase = await this.casesService.applyAdvocacy(
+      id,
+      'Manual intervention',
+      true,
+    );
     if (!updatedCase) {
       throw new NotFoundException(`Case with ID ${id} not found`);
     }
@@ -223,7 +291,9 @@ export class CasesController {
 
   @Get('analytics/roi')
   @Roles('MANAGER')
-  @ApiOperation({ summary: 'Institutional Analytics: Portfolio ROI & Social Impact' })
+  @ApiOperation({
+    summary: 'Institutional Analytics: Portfolio ROI & Social Impact',
+  })
   async getROI(@Req() req: Request) {
     return this.casesService.getROIStats(req['orgId']);
   }
@@ -244,13 +314,17 @@ export class CasesController {
 
   @Post('organization/branding')
   @Roles('MANAGER')
-  @ApiOperation({ summary: 'Branding: Update logo and colors for co-branded experience' })
+  @ApiOperation({
+    summary: 'Branding: Update logo and colors for co-branded experience',
+  })
   async updateBranding(@Req() req: Request, @Body() body: any) {
     return this.casesService.updateOrganizationBranding(req['orgId'], body);
   }
 
   @Post('restructure/:id')
-  @ApiOperation({ summary: 'B2B2C Engine: Consolidation & Restructuring Proposal' })
+  @ApiOperation({
+    summary: 'B2B2C Engine: Consolidation & Restructuring Proposal',
+  })
   async restructure(@Param('id') id: string) {
     const result = await this.casesService.restructureDebt(id);
     if (!result) {
@@ -261,7 +335,9 @@ export class CasesController {
 
   @Delete(':id')
   @Roles('MANAGER')
-  @ApiOperation({ summary: 'GDPR Right to be Forgotten: Permanent data erasure' })
+  @ApiOperation({
+    summary: 'GDPR Right to be Forgotten: Permanent data erasure',
+  })
   async deleteCase(@Param('id') id: string) {
     return this.casesService.deleteCaseData(id);
   }

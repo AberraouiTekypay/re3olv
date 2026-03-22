@@ -13,11 +13,19 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('RE3OLV Institutional API')
-    .setDescription('The core API suite for debt resolution, advocacy logic, and institutional analytics.')
+    .setDescription(
+      'The core API suite for debt resolution, advocacy logic, and institutional analytics.',
+    )
     .setVersion('1.0')
     .addTag('cases', 'Institutional Case Management')
-    .addApiKey({ type: 'apiKey', name: 'x-organization-id', in: 'header' }, 'x-organization-id')
-    .addApiKey({ type: 'apiKey', name: 'x-user-role', in: 'header' }, 'x-user-role')
+    .addApiKey(
+      { type: 'apiKey', name: 'x-organization-id', in: 'header' },
+      'x-organization-id',
+    )
+    .addApiKey(
+      { type: 'apiKey', name: 'x-user-role', in: 'header' },
+      'x-user-role',
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);

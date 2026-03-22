@@ -51,17 +51,25 @@ export class IntegrationOrchestratorService {
   }
 
   async getPaymentAdapter(countryCode: string): Promise<PaymentProvider> {
-    const config = await this.prisma.regionConfig.findUnique({ where: { countryCode } });
-    const adapters = config?.activeAdapters ? JSON.parse(config.activeAdapters) : {};
-    
+    const config = await this.prisma.regionConfig.findUnique({
+      where: { countryCode },
+    });
+    const adapters = config?.activeAdapters
+      ? JSON.parse(config.activeAdapters)
+      : {};
+
     if (adapters.PAYMENTS === 'CMI') return new CMIMoroccoAdapter();
     return new StripeAdapter();
   }
 
   async getERPAdapter(countryCode: string): Promise<ERPProvider> {
-    const config = await this.prisma.regionConfig.findUnique({ where: { countryCode } });
-    const adapters = config?.activeAdapters ? JSON.parse(config.activeAdapters) : {};
-    
+    const config = await this.prisma.regionConfig.findUnique({
+      where: { countryCode },
+    });
+    const adapters = config?.activeAdapters
+      ? JSON.parse(config.activeAdapters)
+      : {};
+
     if (adapters.ERP === 'Oracle') return new OracleAdapter();
     return new SAPAdapter();
   }

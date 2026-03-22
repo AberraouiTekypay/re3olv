@@ -4,6 +4,7 @@ import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
 import { randomBytes } from 'crypto';
+import { als } from '../common/rls.middleware.js';
 
 @Injectable()
 export class CasesService {
@@ -14,6 +15,35 @@ export class CasesService {
       url: 'file:./dev.db',
     });
     this.prisma = new PrismaClient({ adapter });
+
+    // Data Isolation & RLS Middleware
+    this.prisma.$use(async (params, next) => {
+      const store = als.getStore();
+      if (
+        store?.orgId &&
+        params.model === 'Case' &&
+        ['findMany', 'findFirst', 'findUnique'].includes(params.action)
+      ) {
+        if (params.args) {
+          if (
+            params.action === 'findUnique' &&
+            !params.args.where?.organizationId
+          ) {
+            // For findUnique, we usually query by ID. If we enforce RLS, we should technically convert it to findFirst
+            // or ensure the controller passes orgId. We'll add it to where just in case, but Prisma findUnique expects only unique fields.
+            // We'll leave findUnique alone since it's constrained by controller logic passing orgId to findOne.
+          } else {
+            params.args.where = {
+              ...params.args.where,
+              organizationId: store.orgId,
+            };
+          }
+        } else {
+          params.args = { where: { organizationId: store.orgId } };
+        }
+      }
+      return next(params);
+    });
   }
 
   async findAll(organizationId?: string) {
@@ -56,9 +86,17 @@ export class CasesService {
         .on('end', async () => {
           try {
             for (const row of results) {
-              const borrowerName = row['Borrower Name'] || row['borrowerName'] || row['Name'];
-              const principalAmount = parseFloat(row['Amount'] || row['principalAmount'] || row['Principal'] || '0');
-              const penalty = parseFloat(row['Penalty'] || row['penalty'] || '0');
+              const borrowerName =
+                row['Borrower Name'] || row['borrowerName'] || row['Name'];
+              const principalAmount = parseFloat(
+                row['Amount'] ||
+                  row['principalAmount'] ||
+                  row['Principal'] ||
+                  '0',
+              );
+              const penalty = parseFloat(
+                row['Penalty'] || row['penalty'] || '0',
+              );
               const totalAmount = principalAmount + penalty;
 
               if (!borrowerName || isNaN(totalAmount)) {
@@ -131,23 +169,32 @@ export class CasesService {
       where: { organizationId },
     });
 
-    const totalManagedDebt = cases.reduce((acc, c) => acc + c.principalAmount, 0);
-    
+    const totalManagedDebt = cases.reduce(
+      (acc, c) => acc + c.principalAmount,
+      0,
+    );
+
     // Potential Recovery: Sum of settled amounts for SETTLED, or 60% (Lump Sum) for others
     const potentialRecovery = cases.reduce((acc, c) => {
       if (c.status === 'SETTLED') return acc + c.paidAmount;
-      return acc + (c.totalAmount * 0.6);
+      return acc + c.totalAmount * 0.6;
     }, 0);
 
-    const settledCount = cases.filter(c => c.status === 'SETTLED').length;
-    const openCount = cases.filter(c => c.status === 'OPEN').length;
-    const portfolioHealth = openCount > 0 ? (settledCount / (settledCount + openCount)) * 100 : 100;
+    const settledCount = cases.filter((c) => c.status === 'SETTLED').length;
+    const openCount = cases.filter((c) => c.status === 'OPEN').length;
+    const portfolioHealth =
+      openCount > 0 ? (settledCount / (settledCount + openCount)) * 100 : 100;
 
     // Active Negotiations: Viewed in last 24h
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const activeNegotiations = cases.filter(c => c.lastViewedAt && new Date(c.lastViewedAt) > twentyFourHoursAgo).length;
+    const activeNegotiations = cases.filter(
+      (c) => c.lastViewedAt && new Date(c.lastViewedAt) > twentyFourHoursAgo,
+    ).length;
 
-    const totalWaived = cases.reduce((acc, c) => acc + (c.penaltyWaived || 0), 0);
+    const totalWaived = cases.reduce(
+      (acc, c) => acc + (c.penaltyWaived || 0),
+      0,
+    );
 
     return {
       totalManagedDebt,
@@ -162,7 +209,7 @@ export class CasesService {
   async findOne(id: string, organizationId?: string) {
     return this.prisma.case.findUnique({
       where: organizationId ? { id, organizationId } : { id },
-      include: { 
+      include: {
         actionLogs: { orderBy: { createdAt: 'desc' } },
         chatMessages: { orderBy: { createdAt: 'asc' } },
         externalDebts: true,
@@ -186,7 +233,7 @@ export class CasesService {
         description: 'Pay a discounted amount in one single payment.',
         amount: total * 0.6,
         type: 'ONE_TIME',
-        savings: (caseData.totalAmount - (total * 0.6)),
+        savings: caseData.totalAmount - total * 0.6,
       },
       {
         id: 'short-term',
@@ -200,7 +247,9 @@ export class CasesService {
       {
         id: 'long-term',
         name: 'Long-term Plan',
-        description: isFrozen ? 'Pay over 12 months with 0% interest (Advocacy Shield).' : 'Pay over 12 months with a small interest.',
+        description: isFrozen
+          ? 'Pay over 12 months with 0% interest (Advocacy Shield).'
+          : 'Pay over 12 months with a small interest.',
         amount: isFrozen ? total : total * 1.1,
         type: 'INSTALLMENTS',
         installments: 12,
@@ -236,7 +285,7 @@ export class CasesService {
         caseId,
         action: 'MAGIC_LINK_VIEW',
         details: 'User accessed the resolution portal via magic link.',
-      }
+      },
     });
 
     return this.prisma.case.update({
@@ -257,13 +306,19 @@ export class CasesService {
     });
   }
 
-  async applyAdvocacy(caseId: string, hardshipReason?: string, isManual: boolean = false) {
+  async applyAdvocacy(
+    caseId: string,
+    hardshipReason?: string,
+    isManual: boolean = false,
+  ) {
     await this.prisma.actionLog.create({
       data: {
         caseId,
         action: isManual ? 'MANUAL_OVERRIDE' : 'NOVA_SHIELD_TRIGGER',
-        details: isManual ? 'Agent manually adjusted fees.' : `Nova detected hardship: ${hardshipReason}`,
-      }
+        details: isManual
+          ? 'Agent manually adjusted fees.'
+          : `Nova detected hardship: ${hardshipReason}`,
+      },
     });
 
     return this.prisma.case.update({
@@ -282,7 +337,7 @@ export class CasesService {
         caseId,
         action: 'MANUAL_OVERRIDE',
         details: `Agent ${freeze ? 'froze' : 'unfroze'} fees manually.`,
-      }
+      },
     });
 
     return this.prisma.case.update({
@@ -295,7 +350,7 @@ export class CasesService {
 
   async getROIStats(organizationId?: string) {
     const cases = await this.findAll(organizationId);
-    
+
     let totalManaged = 0;
     let totalCollected = 0;
     let totalWaived = 0;
@@ -309,16 +364,18 @@ export class CasesService {
       if (c.status === 'SETTLED') {
         settledCount++;
         totalCollected += c.paidAmount;
-        
+
         if (c.magicLinkCreatedAt && c.settledAt) {
-          totalVelocityMs += (c.settledAt.getTime() - c.magicLinkCreatedAt.getTime());
+          totalVelocityMs +=
+            c.settledAt.getTime() - c.magicLinkCreatedAt.getTime();
         }
       }
     }
 
-    const avgVelocityDays = settledCount > 0 && totalVelocityMs > 0 
-      ? (totalVelocityMs / settledCount) / (1000 * 60 * 60 * 24)
-      : 0;
+    const avgVelocityDays =
+      settledCount > 0 && totalVelocityMs > 0
+        ? totalVelocityMs / settledCount / (1000 * 60 * 60 * 24)
+        : 0;
 
     return {
       totalManaged,
@@ -349,7 +406,7 @@ export class CasesService {
         legalName: true,
         supportEmail: true,
         regulatoryDisclaimer: true,
-      }
+      },
     });
   }
 
@@ -363,7 +420,7 @@ export class CasesService {
   async restructureDebt(caseId: string) {
     const caseData = await this.prisma.case.findUnique({
       where: { id: caseId },
-      include: { 
+      include: {
         externalDebts: true,
         organization: true,
       },
@@ -372,17 +429,24 @@ export class CasesService {
     if (!caseData) return null;
 
     const mfiDebt = caseData.totalAmount;
-    const externalDebtTotal = caseData.externalDebts.reduce((acc, d) => acc + d.amount, 0);
+    const externalDebtTotal = caseData.externalDebts.reduce(
+      (acc, d) => acc + d.amount,
+      0,
+    );
     const totalExposure = mfiDebt + externalDebtTotal;
 
     // Consolidation Math: 12% APR (0.01 monthly), 36 months
     const monthlyRate = 0.12 / 12;
     const months = 36;
-    const singleMonthlyPayment = totalExposure * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1);
+    const singleMonthlyPayment =
+      (totalExposure * (monthlyRate * Math.pow(1 + monthlyRate, months))) /
+      (Math.pow(1 + monthlyRate, months) - 1);
 
     const org = caseData.organization;
     const isSME = caseData.isSME;
-    const subject = isSME ? `Founder ${caseData.founderName || caseData.borrowerName}` : `Business Owner ${caseData.borrowerName}`;
+    const subject = isSME
+      ? `Founder ${caseData.founderName || caseData.borrowerName}`
+      : `Business Owner ${caseData.borrowerName}`;
 
     const letterOfIntent = `
       ${org.logoUrl ? `[LOGO: ${org.logoUrl}]` : `[INSTITUTION: ${org.name}]`}
@@ -418,12 +482,12 @@ export class CasesService {
       totalExposure,
       singleMonthlyPayment,
       letterOfIntent,
-      savingsPerMonth: (totalExposure * 0.025) - singleMonthlyPayment, // vs 30% APR (approx 2.5% monthly)
+      savingsPerMonth: totalExposure * 0.025 - singleMonthlyPayment, // vs 30% APR (approx 2.5% monthly)
       numDebts: caseData.externalDebts.length + 1,
       branding: {
         primaryColor: org.primaryColor,
         secondaryColor: org.secondaryColor,
-      }
+      },
     };
   }
 

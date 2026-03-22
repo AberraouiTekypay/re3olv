@@ -18,7 +18,7 @@ export class LinkService {
     const token = randomBytes(16).toString('hex');
     await this.prisma.case.update({
       where: { id: caseId },
-      data: { 
+      data: {
         magicToken: token,
         magicLinkCreatedAt: new Date(),
       },
