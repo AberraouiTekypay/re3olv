@@ -5,6 +5,11 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const response = NextResponse.next();
 
+  // Allow Global Home and API routes to pass through
+  if (pathname === '/' || pathname.startsWith('/api')) {
+    return response;
+  }
+
   // Region detection logic
   let region: 'za' | 'ma' | 'fr' | 'es' | '' = '';
   if (pathname.startsWith('/za')) region = 'za';
