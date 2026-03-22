@@ -32,9 +32,25 @@ export class AdvocacyBrainService {
       }
     });
 
+    const caseData = await this.casesService.findOne(caseId);
+    const isSME = caseData?.isSME || false;
+    const isVerified = caseData?.isVerified || false;
+
     const model = this.genAI.getGenerativeModel({ model: 'gemini-3-flash' });
 
-    const prompt = `
+    const prompt = isSME 
+      ? `
+      Act as a Founder Advocate and Debt Counselor.
+      The user is an Entrepreneur / Business Owner.
+      ADOPT THE FOUNDER ADVOCATE PERSONA:
+      - Prioritize Business Continuity and Team Protection language.
+      - Validate the Founder's personal sacrifice (equity, home security, personal credit).
+      - If the story indicates business hardship (Late Invoice, Client Default, Supply Cost, Payroll Stress, Working Capital issues), output JSON: { "hardshipDetected": true, "reason": string, "isSMETrigger": true }.
+      - Otherwise, output false.
+      
+      Story: "${story}"
+      `
+      : `
       Act as a debt counselor. If the user's message indicates job loss, illness, or extreme financial hardship, output JSON: { "hardshipDetected": true, "reason": string }. Otherwise, output false.
       
       Story: "${story}"
@@ -47,12 +63,11 @@ export class AdvocacyBrainService {
       
       this.logger.log(`AI Text Output: ${text}`);
 
-      let analysis = { hardshipDetected: false, reason: '' };
-      let novaResponse = "I'm sorry to hear that, but I couldn't detect a specific qualifying hardship in your story. If you have more details about job love or illness, please let me know.";
+      let analysis = { hardshipDetected: false, reason: '', isSMETrigger: false };
+      let novaResponse = isSME 
+        ? "I understand your business is your life's work. I couldn't detect a specific qualifying hardship yet, but if you have details on client defaults or payroll stress, please share."
+        : "I'm sorry to hear that, but I couldn't detect a specific qualifying hardship in your story. If you have more details about job loss or illness, please let me know.";
       
-      const caseData = await this.casesService.findOne(caseId);
-      const isVerified = caseData?.isVerified || false;
-
       if (text.toLowerCase().includes('false') && !isVerified) {
         analysis.hardshipDetected = false;
       } else {
@@ -60,7 +75,7 @@ export class AdvocacyBrainService {
         if (jsonMatch) {
           analysis = JSON.parse(jsonMatch[0]);
         } else if (isVerified) {
-          analysis = { hardshipDetected: true, reason: 'Financial hardship verified via Open Banking cash flow analysis.' };
+          analysis = { hardshipDetected: true, reason: 'Financial hardship verified via Open Banking cash flow analysis.', isSMETrigger: false };
         }
       }
 
@@ -74,11 +89,15 @@ export class AdvocacyBrainService {
         await this.casesService.logComplianceAction(
           caseId, 
           'SHIELD_ACTIVATION', 
-          `Hardship detected via AI reasoning: ${analysis.reason}. Verified: ${isVerified}`
+          `Hardship detected via AI reasoning: ${analysis.reason}. Verified: ${isVerified}. SME: ${isSME}`
         );
 
         if (isVerified) {
-          novaResponse = "I've analyzed your cash flow and verified your hardship. Applying the maximal Shield discount now.";
+          novaResponse = isSME 
+            ? "I've analyzed your business cash flow and verified the stress. Applying stability measures and the maximal Shield discount now."
+            : "I've analyzed your cash flow and verified your hardship. Applying the maximal Shield discount now.";
+        } else if (analysis.isSMETrigger) {
+          novaResponse = `Losing momentum due to ${analysis.reason} is tough. I'm noting this as a Business Continuity Risk for the bank's waiver review and activating your Advocacy Shield.`;
         } else {
           novaResponse = `I've analyzed your situation: "${analysis.reason}". I've activated the Advocacy Shield for you.`;
         }

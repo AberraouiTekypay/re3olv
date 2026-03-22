@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { ShieldCheck, ShieldAlert, History, MessageSquare, Activity, ArrowLeft, BarChart3, TrendingDown, Landmark, Calculator, Sparkles, PieChart, Wallet, ArrowUpCircle, ArrowDownCircle, AlertCircle } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, History, MessageSquare, Activity, ArrowLeft, BarChart3, TrendingDown, Landmark, Calculator, Sparkles, PieChart, Wallet, ArrowUpCircle, ArrowDownCircle, AlertCircle, Building2, UserCircle, HeartPulse, ShieldMinus } from 'lucide-react';
 import { fetchApi } from '@/lib/api-client';
 import { toast } from 'sonner';
 
@@ -48,6 +48,9 @@ interface Expense {
 interface CaseData {
   id: string;
   borrowerName: string;
+  isSME: boolean;
+  founderName: string | null;
+  founderImpact: string | null;
   totalAmount: number;
   creditScore: number;
   isVerified: boolean;
@@ -145,9 +148,17 @@ export default function CaseDetailPage() {
 
       <header className="mb-12 flex justify-between items-start">
         <div>
-          <h1 className="text-4xl font-black tracking-tight text-gray-900">{caseData.borrowerName}</h1>
+          <h1 className="text-4xl font-black tracking-tight text-gray-900 flex items-center gap-3">
+            {caseData.borrowerName}
+            {caseData.isSME && <Building2 className="text-purple-600" size={32} />}
+          </h1>
           <div className="flex items-center gap-3 mt-1">
             <p className="text-lg text-slate-500 font-mono uppercase tracking-tighter">{caseData.id}</p>
+            {caseData.isSME && (
+              <span className="bg-purple-100 text-purple-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1">
+                <Building2 size={12} /> SME Founder
+              </span>
+            )}
             {caseData.isVerified && (
               <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-[10px] font-black uppercase flex items-center gap-1">
                 <ShieldCheck size={12} /> Open Banking Verified
@@ -298,6 +309,52 @@ export default function CaseDetailPage() {
                 )}
               </CardContent>
             </Card>
+
+            {caseData.isSME && (
+              <Card className="border-0 shadow-xl rounded-3xl bg-white overflow-hidden border border-purple-100">
+                <CardHeader className="border-b border-purple-50 bg-purple-50/30">
+                  <CardTitle className="text-purple-900 text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                    <UserCircle size={16} className="text-purple-600" /> Founder Impact Dashboard
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-6">
+                  <div>
+                    <div className="flex justify-between text-xs font-black uppercase text-slate-400 mb-2">
+                      <span>Founder Stress Level</span>
+                      <span className="text-orange-600">Elevated (AI Score: 78/100)</span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                      <div className="bg-orange-500 h-full w-[78%]" />
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-2 italic">Mocked sentiment analysis detects concern regarding home equity and personal credit score.</p>
+                  </div>
+
+                  <div className="p-4 bg-red-50 rounded-2xl border border-red-100">
+                    <div className="flex items-center gap-3">
+                      <ShieldMinus className="text-red-600" size={24} />
+                      <div>
+                        <p className="text-[10px] font-black uppercase text-red-700">Personal Guarantee Detected</p>
+                        <p className="text-sm font-bold text-red-900">Personal Assets at Risk</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 px-3 py-1.5 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest w-fit">
+                      CRITICAL ADVOCACY
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-slate-50 rounded-xl">
+                      <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Equity Sacrifice</p>
+                      <p className="text-xs font-bold text-slate-900">High</p>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-xl">
+                      <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Stability Outlook</p>
+                      <p className="text-xs font-bold text-slate-900">Survival Focus</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       ) : (
