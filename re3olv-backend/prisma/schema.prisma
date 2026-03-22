@@ -40,6 +40,9 @@ model Case {
   isSME            Boolean  @default(false)
   founderName      String?
   founderImpact    String?  // How business debt affects the owner's livelihood
+  verificationMethod String  @default("OFFICIAL_REGISTER") // OFFICIAL_REGISTER, CASH_FLOW_PROXY, HYBRID
+  lastFiscalUpdate DateTime?
+  verifiedRevenue  Float    @default(0)
   principalAmount  Float    @default(0)
   paidAmount       Float    @default(0)
   totalAmount      Float

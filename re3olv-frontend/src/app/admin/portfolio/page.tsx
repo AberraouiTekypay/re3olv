@@ -99,6 +99,68 @@ export default function CEOPortfolioPage() {
         </Card>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <Card className="border-0 shadow-xl rounded-[2.5rem] bg-white overflow-hidden border border-slate-100">
+          <CardHeader className="p-8 border-b border-slate-50 bg-slate-50/30">
+            <CardTitle className="text-xl font-black flex items-center gap-2">
+              <ShieldCheck className="text-green-600" size={24} /> RWA Relief Calculator
+            </CardTitle>
+            <CardDescription>Risk-Weighted Asset relief achieved via verified resolution data.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-10 space-y-8">
+            <div className="grid grid-cols-2 gap-8">
+              <div className="p-6 bg-green-50 rounded-3xl border border-green-100">
+                <p className="text-[10px] font-black text-green-700 uppercase mb-1">Total RWA Relief</p>
+                <p className="text-3xl font-black text-green-900">$1.2M</p>
+                <p className="text-[9px] text-green-600 font-bold mt-2 uppercase">Basel III / IV Compliant</p>
+              </div>
+              <div className="p-6 bg-indigo-50 rounded-3xl border border-indigo-100">
+                <p className="text-[10px] font-black text-indigo-700 uppercase mb-1">Data Confidence</p>
+                <p className="text-3xl font-black text-indigo-900">88%</p>
+                <p className="text-[9px] text-indigo-600 font-bold mt-2 uppercase">Official + Proxy Hybrid</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between text-xs font-black uppercase text-slate-400">
+                <span>Verification Mix</span>
+                <span>High Confidence</span>
+              </div>
+              <div className="w-full bg-slate-100 h-4 rounded-full overflow-hidden flex">
+                <div className="bg-green-500 h-full w-[65%]" title="Official Register" />
+                <div className="bg-indigo-400 h-full w-[25%]" title="Mobile Money Proxy" />
+                <div className="bg-orange-300 h-full w-[10%]" title="Manual Review Required" />
+              </div>
+              <div className="flex gap-4 text-[9px] font-black uppercase tracking-tighter">
+                <div className="flex items-center gap-1.5 text-green-600"><div className="w-2 h-2 rounded-full bg-green-500" /> Official Register</div>
+                <div className="flex items-center gap-1.5 text-indigo-500"><div className="w-2 h-2 rounded-full bg-indigo-400" /> Cash Flow Proxy</div>
+                <div className="flex items-center gap-1.5 text-orange-500"><div className="w-2 h-2 rounded-full bg-orange-300" /> Pending Review</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-xl rounded-[2.5rem] bg-slate-900 text-white overflow-hidden relative">
+          <CardHeader className="p-8 border-b border-white/5 bg-white/5">
+            <CardTitle className="text-xl font-black">Capital Allocation Insights</CardTitle>
+            <CardDescription className="text-slate-400">Portfolio-wide provisioning recommendations based on resolution velocity.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-10 space-y-6">
+            <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+              <span className="text-sm font-medium">Provisioning Over-coverage</span>
+              <span className="text-xl font-black text-green-400">-$450K</span>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+              <span className="text-sm font-medium">Capital Re-deployment Potential</span>
+              <span className="text-xl font-black text-indigo-400">+$1.8M</span>
+            </div>
+            <p className="text-[10px] text-slate-500 italic leading-relaxed pt-4">
+              Nova ESG Analysis: High-impact resolution data allows for significant reduction in regulatory capital buffers, increasing institutional lending capacity.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="border-0 shadow-xl rounded-[2.5rem] bg-white overflow-hidden border border-slate-100">
           <CardHeader className="p-8 border-b border-slate-50">

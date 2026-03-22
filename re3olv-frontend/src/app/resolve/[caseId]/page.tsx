@@ -4,6 +4,7 @@ import { Scale } from 'lucide-react';
 import { SettlementSelector } from './SettlementSelector';
 import { AdvocacyShield } from './AdvocacyShield';
 import { ViewTracker } from './ViewTracker';
+import { EvidenceDrawer } from './EvidenceDrawer';
 import { fetchApi } from '@/lib/api-client';
 
 interface SettlementOption {
@@ -23,6 +24,7 @@ interface CaseData {
   isSME: boolean;
   founderName: string | null;
   founderImpact: string | null;
+  verificationMethod: 'OFFICIAL_REGISTER' | 'CASH_FLOW_PROXY' | 'HYBRID';
   totalAmount: number;
   status: string;
   isFeeFrozen: boolean;
@@ -75,6 +77,10 @@ export default async function ResolvePage({ params }: { params: { caseId: string
         />
 
         <SettlementSelector caseId={caseId} options={options} initialStatus={caseData.status} />
+
+        {caseData.isSME && (caseData.verificationMethod === 'CASH_FLOW_PROXY' || caseData.verificationMethod === 'HYBRID') && (
+          <EvidenceDrawer caseId={caseId} />
+        )}
 
         <footer className="mt-24 pt-12 border-t border-slate-100 pb-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center md:text-left">

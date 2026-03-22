@@ -4,13 +4,18 @@ import { CasesService } from './cases.service.js';
 import { PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 
+import { EuropeanRegisterService } from './european-register.service.js';
+
 @Injectable()
 export class AdvocacyBrainService {
   private readonly logger = new Logger(AdvocacyBrainService.name);
   private genAI: GoogleGenerativeAI;
   private prisma: PrismaClient;
 
-  constructor(private casesService: CasesService) {
+  constructor(
+    private casesService: CasesService,
+    private europeanRegisterService: EuropeanRegisterService,
+  ) {
     const apiKey = process.env.GEMINI_API_KEY || '';
     this.genAI = new GoogleGenerativeAI(apiKey);
     
@@ -35,6 +40,7 @@ export class AdvocacyBrainService {
     const caseData = await this.casesService.findOne(caseId);
     const isSME = caseData?.isSME || false;
     const isVerified = caseData?.isVerified || false;
+    const verificationMethod = caseData?.verificationMethod || 'OFFICIAL_REGISTER';
 
     const model = this.genAI.getGenerativeModel({ model: 'gemini-3-flash' });
 
@@ -42,6 +48,7 @@ export class AdvocacyBrainService {
       ? `
       Act as a Founder Advocate and Debt Counselor.
       The user is an Entrepreneur / Business Owner.
+      ${verificationMethod === 'OFFICIAL_REGISTER' ? 'USE FORMAL COMPLIANCE LANGUAGE.' : 'USE EMPATHETIC ADVOCACY LANGUAGE.'}
       ADOPT THE FOUNDER ADVOCATE PERSONA:
       - Prioritize Business Continuity and Team Protection language.
       - Validate the Founder's personal sacrifice (equity, home security, personal credit).
@@ -89,12 +96,14 @@ export class AdvocacyBrainService {
         await this.casesService.logComplianceAction(
           caseId, 
           'SHIELD_ACTIVATION', 
-          `Hardship detected via AI reasoning: ${analysis.reason}. Verified: ${isVerified}. SME: ${isSME}`
+          `Hardship detected via AI reasoning: ${analysis.reason}. Verified: ${isVerified}. SME: ${isSME}. Method: ${verificationMethod}`
         );
 
         if (isVerified) {
           novaResponse = isSME 
-            ? "I've analyzed your business cash flow and verified the stress. Applying stability measures and the maximal Shield discount now."
+            ? (verificationMethod === 'OFFICIAL_REGISTER' 
+                ? "Your official registry data has been verified. I've initiated formal stability protocols and applied the institutional waiver suite." 
+                : "I've analyzed your business cash flow and verified the stress. Applying stability measures and the maximal Shield discount now.")
             : "I've analyzed your cash flow and verified your hardship. Applying the maximal Shield discount now.";
         } else if (analysis.isSMETrigger) {
           const specificIssue = analysis.reason.toLowerCase().includes('client') ? 'Losing a key client' : (analysis.reason.toLowerCase().includes('invoice') ? 'A late invoice' : analysis.reason);
