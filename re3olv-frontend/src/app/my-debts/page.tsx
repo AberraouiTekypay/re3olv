@@ -193,6 +193,13 @@ export default function MyDebtsPage() {
               <Button className="w-full h-14 bg-white text-indigo-600 hover:bg-slate-100 rounded-2xl font-black uppercase tracking-tighter shadow-2xl shadow-indigo-950/50 flex gap-2">
                 Apply for Consolidation <ArrowRight size={18} />
               </Button>
+              <Button 
+                variant="outline"
+                className="w-full h-12 bg-white/5 border-white/20 text-white hover:bg-white/10 rounded-2xl font-bold gap-2"
+                onClick={() => window.open(`http://localhost:3001/api/cases/${caseId}/offer-pdf`, '_blank')}
+              >
+                <Download size={18} /> Download Official Offer
+              </Button>
             </CardContent>
             <CardFooter className="relative z-10 bg-black/20 py-4 px-6">
               <p className="text-[10px] font-bold text-indigo-300 uppercase leading-tight text-center">

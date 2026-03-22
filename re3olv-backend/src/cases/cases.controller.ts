@@ -64,6 +64,28 @@ export class CasesController {
     return result;
   }
 
+  @Post(':id/nudge-approved')
+  @Roles('AGENT')
+  @ApiOperation({ summary: 'Outreach: Send approval nudge with PDF link' })
+  async nudgeApproved(@Param('id') id: string) {
+    const result = await this.casesService.nudgeApproved(id);
+    if (!result) {
+      throw new NotFoundException(`Case with ID ${id} not found`);
+    }
+    return result;
+  }
+
+  @Get(':id/offer-pdf')
+  @ApiOperation({ summary: 'Download Restructuring Offer Letter (PDF/TXT)' })
+  async downloadOffer(@Param('id') id: string, @Req() req: any, @Body() body: any) {
+    const result = await this.casesService.generateOfferPdf(id);
+    if (!result) {
+      throw new NotFoundException(`Case with ID ${id} not found`);
+    }
+    // Simple response for demo purposes
+    return result.content;
+  }
+
   @Get(':id')
   @Roles('AGENT', 'MANAGER')
   @ApiOperation({ summary: 'Retrieve full 360-degree case data' })

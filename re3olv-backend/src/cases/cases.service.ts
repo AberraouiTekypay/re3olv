@@ -386,6 +386,42 @@ export class CasesService {
     };
   }
 
+  async nudgeApproved(caseId: string) {
+    const result = await this.restructureDebt(caseId);
+    if (!result) return null;
+
+    const caseData = await this.prisma.case.findUnique({
+      where: { id: caseId },
+    });
+
+    const monthlyPayment = Math.round(result.singleMonthlyPayment);
+    const downloadLink = `http://localhost:3001/api/cases/${caseId}/offer-pdf`;
+    const message = `Your consolidation offer has been approved. Your new monthly payment is $${monthlyPayment}. Download your signed letter here: ${downloadLink}`;
+
+    await this.prisma.case.update({
+      where: { id: caseId },
+      data: {
+        lastNudgedAt: new Date(),
+      },
+    });
+
+    return { message, downloadLink };
+  }
+
+  async generateOfferPdf(caseId: string) {
+    const result = await this.restructureDebt(caseId);
+    if (!result) return null;
+
+    const caseData = await this.prisma.case.findUnique({
+      where: { id: caseId },
+    });
+
+    return {
+      filename: `RE3OLV_Offer_${caseId.slice(0, 8)}.txt`, // Using TXT as a simple fallback for demo if PDF lib fails
+      content: result.letterOfIntent,
+    };
+  }
+
   async deleteCaseData(caseId: string) {
     // GDPR 'Right to be Forgotten' - Cascade deletion handled by relations
     return this.prisma.case.delete({
