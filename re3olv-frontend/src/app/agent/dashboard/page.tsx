@@ -63,12 +63,14 @@ export default function AgentDashboardPage() {
 
   const sendNudge = async (c: CaseData) => {
     try {
-      const { url } = await fetchApi<{ url: string }>(`/cases/${c.id}/magic-link`);
-      const message = `Hi ${c.borrowerName}, I'm Nova from RE3OLV. Just checking in on your resolution plan. I can still help you waive some fees. View your options here: ${url}`;
+      const { message } = await fetchApi<{ message: string }>(`/cases/${c.id}/nudge`, {
+        method: 'POST',
+      });
       await navigator.clipboard.writeText(message);
-      toast.success(`Nudge reminder copied for ${c.borrowerName}!`);
+      toast.success(`Nudge sent & message copied for ${c.borrowerName}!`);
+      fetchData(); // Refresh to show lastViewedAt updates
     } catch (error) {
-      toast.error('Failed to generate magic link');
+      toast.error('Failed to send nudge');
     }
   };
 

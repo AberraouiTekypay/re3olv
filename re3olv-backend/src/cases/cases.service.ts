@@ -105,6 +105,27 @@ export class CasesService {
     });
   }
 
+  async nudgeCase(caseId: string) {
+    const caseData = await this.prisma.case.findUnique({
+      where: { id: caseId },
+    });
+
+    if (!caseData) return null;
+
+    const token = caseData.magicToken;
+    const magicLink = `http://localhost:3000/resolve/${caseId}?token=${token}`;
+    const message = `Hi ${caseData.borrowerName}, I am Nova from RE3OLV. I have a debt relief proposal ready for you. View here: ${magicLink}`;
+
+    await this.prisma.case.update({
+      where: { id: caseId },
+      data: {
+        lastNudgedAt: new Date(),
+      },
+    });
+
+    return { message, magicLink };
+  }
+
   async findOne(id: string, organizationId?: string) {
     return this.prisma.case.findUnique({
       where: organizationId ? { id, organizationId } : { id },

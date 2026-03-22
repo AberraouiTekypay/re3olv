@@ -45,6 +45,7 @@ model Case {
   magicLinkCreatedAt DateTime?
   viewCount        Int      @default(0)
   lastViewedAt     DateTime?
+  lastNudgedAt     DateTime?
   settledAt        DateTime?
   nextFollowUp     DateTime?
   organizationId   String

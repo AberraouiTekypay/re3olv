@@ -53,6 +53,17 @@ export class CasesController {
     return this.casesService.findBatchUploads(req['orgId']);
   }
 
+  @Post(':id/nudge')
+  @Roles('AGENT')
+  @ApiOperation({ summary: 'Outreach: Generate personalized nudge message and track action' })
+  async nudgeCase(@Param('id') id: string) {
+    const result = await this.casesService.nudgeCase(id);
+    if (!result) {
+      throw new NotFoundException(`Case with ID ${id} not found`);
+    }
+    return result;
+  }
+
   @Get(':id')
   @Roles('AGENT', 'MANAGER')
   @ApiOperation({ summary: 'Retrieve full 360-degree case data' })
