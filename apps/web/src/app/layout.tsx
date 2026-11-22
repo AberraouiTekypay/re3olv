@@ -4,6 +4,9 @@ import "./globals.css";
 import { Toaster } from 'sonner';
 import { InstitutionalAuthBoundary } from '@/components/InstitutionalAuthBoundary';
 
+// The nonce-based CSP is created per request in proxy.ts; static HTML cannot carry that nonce.
+export const dynamic = 'force-dynamic';
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
