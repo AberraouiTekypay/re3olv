@@ -7,8 +7,11 @@ import { EuropeanRegisterService } from './european-register.service.js';
 import { ProviderOrchestratorService } from './provider-orchestrator.service.js';
 import { IntegrationOrchestratorService } from './integration-orchestrator.service.js';
 import { EncryptionService } from './encryption.service.js';
+import { AuthModule } from '../auth/auth.module.js';
+import { BorrowerTokenGuard } from './borrower-token.guard.js';
 
 @Module({
+  imports: [AuthModule],
   providers: [
     CasesService,
     AdvocacyBrainService,
@@ -17,6 +20,7 @@ import { EncryptionService } from './encryption.service.js';
     ProviderOrchestratorService,
     IntegrationOrchestratorService,
     EncryptionService,
+    BorrowerTokenGuard,
   ],
   controllers: [CasesController],
   exports: [

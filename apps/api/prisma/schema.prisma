@@ -47,8 +47,9 @@ model ProviderRegistry {
 
 model User {
   id             String       @id @default(uuid())
+  oidcSubject    String?      @unique
   name           String
-  role           String       @default("AGENT") // AGENT, MANAGER
+  role           String       @default("AGENT") // AGENT, MANAGER, PLATFORM_ADMIN
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
 }
@@ -72,7 +73,7 @@ model Case {
   status           String   @default("OPEN")
   selectedOptionId String?
   hardshipReason   String?
-  magicToken       String?  @unique
+  magicToken       String?  @unique // SHA-256 hash of the active borrower link token
   magicLinkCreatedAt DateTime?
   viewCount        Int      @default(0)
   lastViewedAt     DateTime?

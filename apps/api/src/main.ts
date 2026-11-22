@@ -18,14 +18,7 @@ async function bootstrap() {
     )
     .setVersion('1.0')
     .addTag('cases', 'Institutional Case Management')
-    .addApiKey(
-      { type: 'apiKey', name: 'x-organization-id', in: 'header' },
-      'x-organization-id',
-    )
-    .addApiKey(
-      { type: 'apiKey', name: 'x-user-role', in: 'header' },
-      'x-user-role',
-    )
+    .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);

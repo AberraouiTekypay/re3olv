@@ -53,3 +53,7 @@ This backlog turns the pre-production audit into a staged release plan. A sprint
 ## Release gate
 
 Do not enable real borrower or institutional data until Sprints 1 and 2 are complete. Do not enable external production traffic until all four sprints meet their acceptance criteria and the release checks pass.
+
+## Current progress
+
+Sprint 1 implementation is in progress: OIDC-backed institutional roles, organization-scoped case operations, explicit borrower-token routes, hashed seven-day borrower tokens, and aligned portal endpoints are in place. Sprint 1 still needs real OIDC configuration, provisioned user mappings, database migration deployment, and acceptance checks before it can be marked complete.

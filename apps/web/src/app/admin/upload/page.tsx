@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Upload, FileSpreadsheet, Download, CheckCircle, AlertCircle, Loader2, ArrowLeft, Trash2, Activity, Sparkles } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/api-client';
+import { getOidcAccessToken } from '@/lib/oidc-client';
 import { toast } from 'sonner';
 
 interface PreviewRow {
@@ -67,10 +68,9 @@ export default function BulkUploadPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/cases/upload`, {
         method: 'POST',
-        headers: {
-          'x-organization-id': 'default-org',
-          'x-user-role': 'AGENT',
-        },
+        headers: await getOidcAccessToken().then((token) =>
+          token ? { Authorization: `Bearer ${token}` } : {},
+        ),
         body: formData,
       });
 
@@ -233,7 +233,7 @@ export default function BulkUploadPage() {
               <div>
                 <h4 className="font-black text-slate-900 mb-1 uppercase text-sm">Automated Magic Links</h4>
                 <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                  Upon confirmation, Nova will automatically generate unique tokens for every borrower in the portfolio.
+                  Each borrower receives a unique, expiring token when an authorized agent creates an outreach link.
                 </p>
               </div>
             </CardContent>

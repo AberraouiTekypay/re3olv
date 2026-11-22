@@ -19,7 +19,7 @@ interface SettlementOption {
   monthlyPayment?: number;
 }
 
-export function SettlementSelector({ caseId, options, initialStatus }: { caseId: string, options: SettlementOption[], initialStatus: string }) {
+export function SettlementSelector({ caseId, token, options, initialStatus }: { caseId: string, token: string, options: SettlementOption[], initialStatus: string }) {
   const [loading, setLoading] = useState<string | null>(null);
   const [isPaying, setIsPaying] = useState(false);
   const router = useRouter();
@@ -29,7 +29,7 @@ export function SettlementSelector({ caseId, options, initialStatus }: { caseId:
       // If already resolved, we show the plans but allow payment
     }
     if (initialStatus === 'SETTLED') {
-      router.replace(`/resolve/${caseId}/confirmation`);
+      router.replace(`/resolve/${caseId}/confirmation?token=${encodeURIComponent(token)}`);
     }
   }, [initialStatus, caseId, router]);
 
@@ -38,6 +38,7 @@ export function SettlementSelector({ caseId, options, initialStatus }: { caseId:
     try {
       await fetchApi(`/cases/${caseId}/resolve`, {
         method: 'POST',
+        headers: { 'x-borrower-token': token },
         body: JSON.stringify({ optionId }),
       });
       toast.success('Plan activated. You can now proceed to payment.');
@@ -58,10 +59,11 @@ export function SettlementSelector({ caseId, options, initialStatus }: { caseId:
     try {
       await fetchApi(`/cases/${caseId}/settle`, {
         method: 'POST',
+        headers: { 'x-borrower-token': token },
         body: JSON.stringify({ amount }),
       });
       toast.success('Payment successful! Redirecting...');
-      router.push(`/resolve/${caseId}/confirmation`);
+      router.push(`/resolve/${caseId}/confirmation?token=${encodeURIComponent(token)}`);
     } catch (error) {
       console.error(error);
       toast.error('Payment failed. Please try again.');

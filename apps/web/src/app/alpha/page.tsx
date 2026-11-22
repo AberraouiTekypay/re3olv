@@ -39,12 +39,21 @@ export default function AlphaLaunchpad() {
 
   const generateAndCopyNudge = async (c: CaseData) => {
     try {
-      const { url } = await fetchApi<{ url: string }>(`/cases/${c.id}/magic-link`);
+      const { url } = await fetchApi<{ url: string }>(`/cases/${c.id}/magic-link`, { method: 'POST' });
       const message = `Hi ${c.borrowerName}, I'm Nova, your RE3OLV Advocate. I've been reviewing your account with [MFI] and I think I can get some of your late fees waived. Can we chat? ${url}`;
       await navigator.clipboard.writeText(message);
       toast.success(`WhatsApp nudge copied for ${c.borrowerName}!`);
     } catch (error) {
       toast.error('Failed to generate magic link');
+    }
+  };
+
+  const openBorrowerPortal = async (c: CaseData) => {
+    try {
+      const { url } = await fetchApi<{ url: string }>(`/cases/${c.id}/magic-link`, { method: 'POST' });
+      window.location.assign(url);
+    } catch {
+      toast.error('Failed to generate a secure borrower link');
     }
   };
 
@@ -132,9 +141,9 @@ export default function AlphaLaunchpad() {
                           <MessageSquare size={14} className="mr-2" /> Nudge
                         </Button>
                         <Button variant="outline" size="sm" className="rounded-xl font-bold bg-white hover:bg-slate-50 border-2 flex-1" asChild>
-                          <a href={`/resolve/${c.id}`} target="_blank" rel="noopener noreferrer">
+                          <button onClick={() => openBorrowerPortal(c)}>
                             Portal <ExternalLink size={14} className="ml-2" />
-                          </a>
+                          </button>
                         </Button>
                       </div>
                       <Button size="sm" className="rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100 w-full" asChild>

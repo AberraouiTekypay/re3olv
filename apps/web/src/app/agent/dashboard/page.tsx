@@ -60,7 +60,7 @@ export default function AgentDashboardPage() {
     try {
       const [casesData, statsData, adminData] = await Promise.all([
         fetchApi<CaseData[]>('/cases'),
-        fetchApi<ROIStats>('/cases/analytics/roi'),
+        fetchApi<ROIStats>('/cases/admin/roi'),
         fetchApi<AdminStats>('/cases/admin/stats')
       ]);
       setCases(casesData);

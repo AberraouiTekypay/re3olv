@@ -40,25 +40,33 @@ interface BrandingData {
 function MyDebtsContent() {
   const searchParams = useSearchParams();
   const caseId = searchParams.get('caseId');
+  const token = searchParams.get('token');
   const [caseData, setCaseData] = useState<CaseData | null>(null);
   const [restructure, setRestructure] = useState<RestructureData | null>(null);
   const [branding, setBranding] = useState<BrandingData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (caseId) {
+    if (caseId && token) {
       fetchData();
     } else {
       setLoading(false);
     }
-  }, [caseId]);
+  }, [caseId, token]);
 
   const fetchData = async () => {
     try {
       const [data, restData, brandData] = await Promise.all([
-        fetchApi<CaseData>(`/cases/${caseId}`),
-        fetchApi<RestructureData>(`/cases/restructure/${caseId}`, { method: 'POST' }),
-        fetchApi<BrandingData>('/cases/organization/branding')
+        fetchApi<CaseData>(`/cases/${caseId}/borrower-debts`, {
+          headers: { 'x-borrower-token': token! },
+        }),
+        fetchApi<RestructureData>(`/cases/${caseId}/borrower-restructure`, {
+          method: 'POST',
+          headers: { 'x-borrower-token': token! },
+        }),
+        fetchApi<BrandingData>(`/cases/${caseId}/borrower-branding`, {
+          headers: { 'x-borrower-token': token! },
+        }),
       ]);
       setCaseData(data);
       setRestructure(restData);
@@ -74,8 +82,8 @@ function MyDebtsContent() {
   if (!caseData) return (
     <div className="p-12 text-center max-w-md mx-auto">
       <AlertCircle className="mx-auto text-orange-500 mb-4" size={48} />
-      <h2 className="text-2xl font-black mb-2">No Case ID Detected</h2>
-      <p className="text-slate-500 mb-6">Please use the secure link sent to you by your institutional advocate.</p>
+      <h2 className="text-2xl font-black mb-2">Secure link required</h2>
+      <p className="text-slate-500 mb-6">Please use a current secure link sent by your institutional advocate.</p>
     </div>
   );
 

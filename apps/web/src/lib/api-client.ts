@@ -2,12 +2,14 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost
 
 export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
+  const accessToken = typeof window !== 'undefined'
+    ? await (await import('@/lib/oidc-client')).getOidcAccessToken()
+    : undefined;
   const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      'x-organization-id': 'default-org',
-      'x-user-role': endpoint.includes('analytics') ? 'MANAGER' : 'AGENT',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...options.headers,
     },
   });

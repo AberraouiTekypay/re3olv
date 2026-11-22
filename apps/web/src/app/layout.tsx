@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from 'sonner';
+import { InstitutionalAuthBoundary } from '@/components/InstitutionalAuthBoundary';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +30,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        {children}
+        <InstitutionalAuthBoundary>{children}</InstitutionalAuthBoundary>
         <Toaster richColors position="top-right" />
         <footer className="mt-auto py-6 border-t border-slate-100 bg-white/50 backdrop-blur-sm">
           <div className="container mx-auto px-4 flex justify-between items-center text-sm font-bold text-slate-500">

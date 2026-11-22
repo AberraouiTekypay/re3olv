@@ -29,7 +29,7 @@ export default function CEOPortfolioPage() {
 
   const fetchData = async () => {
     try {
-      const data = await fetchApi<ROIStats>('/cases/analytics/roi');
+      const data = await fetchApi<ROIStats>('/cases/admin/roi');
       setStats(data);
     } catch (error) {
       toast.error('Failed to load institutional analytics');

@@ -32,20 +32,40 @@ interface CaseData {
   hardshipReason: string | null;
 }
 
-async function getCaseData(caseId: string): Promise<CaseData> {
-  return fetchApi<CaseData>(`/cases/${caseId}`, { cache: 'no-store' });
+async function getCaseData(caseId: string, token: string): Promise<CaseData> {
+  return fetchApi<CaseData>(`/cases/${caseId}/portal`, {
+    cache: 'no-store',
+    headers: { 'x-borrower-token': token },
+  });
 }
 
-async function getSettlementOptions(caseId: string): Promise<SettlementOption[]> {
-  return fetchApi<SettlementOption[]>(`/cases/${caseId}/options`, { cache: 'no-store' });
+async function getSettlementOptions(caseId: string, token: string): Promise<SettlementOption[]> {
+  return fetchApi<SettlementOption[]>(`/cases/${caseId}/settlement-options`, {
+    cache: 'no-store',
+    headers: { 'x-borrower-token': token },
+  });
 }
 
-export default async function ResolvePage({ params }: { params: { caseId: string } }) {
+export default async function ResolvePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ caseId: string }>;
+  searchParams: Promise<{ token?: string }>;
+}) {
   const { caseId } = await params;
+  const { token } = await searchParams;
+  if (!token) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center p-6 text-center">
+        <p className="text-muted-foreground">This resolution link is invalid or has expired. Please contact your institution for a new link.</p>
+      </div>
+    );
+  }
   
   try {
-    const caseData = await getCaseData(caseId);
-    const options = await getSettlementOptions(caseId);
+    const caseData = await getCaseData(caseId, token);
+    const options = await getSettlementOptions(caseId, token);
 
     const title = caseData.isSME ? `Founder Stability Portal` : "Resolve Your Debt";
     const greeting = caseData.isSME 
@@ -54,7 +74,7 @@ export default async function ResolvePage({ params }: { params: { caseId: string
 
     return (
       <div className="container mx-auto py-12 px-4 max-w-5xl">
-        <ViewTracker caseId={caseId} />
+        <ViewTracker caseId={caseId} token={token} />
         <header className="mb-12 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold mb-4">
             <Scale size={14} /> Official {caseData.isSME ? 'SME' : 'Institutional'} Advocacy
@@ -74,9 +94,10 @@ export default async function ResolvePage({ params }: { params: { caseId: string
           penaltyWaived={caseData.penaltyWaived}
           hardshipReason={caseData.hardshipReason}
           isSME={caseData.isSME}
+          token={token}
         />
 
-        <SettlementSelector caseId={caseId} options={options} initialStatus={caseData.status} />
+        <SettlementSelector caseId={caseId} token={token} options={options} initialStatus={caseData.status} />
 
         {caseData.isSME && (caseData.verificationMethod === 'CASH_FLOW_PROXY' || caseData.verificationMethod === 'HYBRID') && (
           <EvidenceDrawer caseId={caseId} />

@@ -37,7 +37,7 @@ export default function BrandingSettingsPage() {
 
   const fetchBranding = async () => {
     try {
-      const data = await fetchApi<BrandingData>('/cases/organization/branding');
+      const data = await fetchApi<BrandingData>('/cases/admin/branding');
       if (data) setBranding(data);
     } catch (error) {
       toast.error('Failed to load branding settings');
@@ -49,7 +49,7 @@ export default function BrandingSettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetchApi('/cases/organization/branding', {
+      await fetchApi('/cases/admin/branding', {
         method: 'POST',
         body: JSON.stringify(branding),
       });

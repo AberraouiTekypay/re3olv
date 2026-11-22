@@ -25,19 +25,33 @@ interface CaseData {
   paidAmount?: number;
 }
 
-async function getCaseData(caseId: string): Promise<CaseData> {
-  return fetchApi<CaseData>(`/cases/${caseId}`, { cache: 'no-store' });
+async function getCaseData(caseId: string, token: string): Promise<CaseData> {
+  return fetchApi<CaseData>(`/cases/${caseId}/portal`, {
+    cache: 'no-store',
+    headers: { 'x-borrower-token': token },
+  });
 }
 
-async function getSettlementOptions(caseId: string): Promise<SettlementOption[]> {
-  return fetchApi<SettlementOption[]>(`/cases/${caseId}/options`, { cache: 'no-store' });
+async function getSettlementOptions(caseId: string, token: string): Promise<SettlementOption[]> {
+  return fetchApi<SettlementOption[]>(`/cases/${caseId}/settlement-options`, {
+    cache: 'no-store',
+    headers: { 'x-borrower-token': token },
+  });
 }
 
-export default async function ConfirmationPage({ params }: { params: { caseId: string } }) {
+export default async function ConfirmationPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ caseId: string }>;
+  searchParams: Promise<{ token?: string }>;
+}) {
   const { caseId } = await params;
+  const { token } = await searchParams;
+  if (!token) redirect(`/resolve/${caseId}`);
   
   try {
-    const caseData = await getCaseData(caseId);
+    const caseData = await getCaseData(caseId, token);
 
     if (caseData.status === 'SETTLED') {
       return (
@@ -94,14 +108,14 @@ export default async function ConfirmationPage({ params }: { params: { caseId: s
     }
 
     if (caseData.status !== 'RESOLVED' || !caseData.selectedOptionId) {
-      redirect(`/resolve/${caseId}`);
+      redirect(`/resolve/${caseId}?token=${encodeURIComponent(token)}`);
     }
 
-    const options = await getSettlementOptions(caseId);
+    const options = await getSettlementOptions(caseId, token);
     const selectedOption = options.find((opt) => opt.id === caseData.selectedOptionId);
 
     if (!selectedOption) {
-      redirect(`/resolve/${caseId}`);
+      redirect(`/resolve/${caseId}?token=${encodeURIComponent(token)}`);
     }
 
     const dueDate = new Date();
@@ -173,7 +187,7 @@ export default async function ConfirmationPage({ params }: { params: { caseId: s
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
             <Button asChild className="w-full h-12 text-lg font-bold bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-100">
-              <Link href={`/resolve/${caseId}`}>
+              <Link href={`/resolve/${caseId}?token=${encodeURIComponent(token)}`}>
                 Refresh Status
               </Link>
             </Button>

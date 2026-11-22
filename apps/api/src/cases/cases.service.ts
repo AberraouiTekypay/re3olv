@@ -3,24 +3,37 @@ import { PrismaClient } from '../../generated/prisma/client.js';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
-import { randomBytes } from 'crypto';
-import { als } from '../common/rls.middleware.js';
+import { LinkService } from './link.service.js';
 
 @Injectable()
 export class CasesService {
   private prisma: PrismaClient;
 
-  constructor() {
+  constructor(private readonly linkService: LinkService) {
     const adapter = new PrismaBetterSqlite3({
       url: 'file:./dev.db',
     });
     this.prisma = new PrismaClient({ adapter });
   }
 
-  async findAll(organizationId?: string) {
+  async findAll(organizationId: string) {
     return this.prisma.case.findMany({
-      where: organizationId ? { organizationId } : {},
+      where: { organizationId },
       orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        borrowerName: true,
+        totalAmount: true,
+        paidAmount: true,
+        status: true,
+        selectedOptionId: true,
+        isFeeFrozen: true,
+        penaltyWaived: true,
+        hardshipReason: true,
+        viewCount: true,
+        lastViewedAt: true,
+        createdAt: true,
+      },
     });
   }
 
@@ -87,8 +100,6 @@ export class CasesService {
                 continue;
               }
 
-              const magicToken = randomBytes(16).toString('hex');
-
               await this.prisma.case.create({
                 data: {
                   borrowerName,
@@ -97,8 +108,6 @@ export class CasesService {
                   organizationId,
                   batchUploadId: batchId,
                   status: 'OPEN',
-                  magicToken,
-                  magicLinkCreatedAt: new Date(),
                 },
               });
             }
@@ -126,19 +135,20 @@ export class CasesService {
     });
   }
 
-  async nudgeCase(caseId: string) {
-    const caseData = await this.prisma.case.findUnique({
-      where: { id: caseId },
+  async nudgeCase(caseId: string, organizationId: string) {
+    const caseData = await this.prisma.case.findFirst({
+      where: { id: caseId, organizationId },
     });
 
     if (!caseData) return null;
 
-    const token = caseData.magicToken;
-    const magicLink = `http://localhost:3000/resolve/${caseId}?token=${token}`;
+    const link = await this.linkService.generateMagicLink(caseId, organizationId);
+    if (!link) return null;
+    const magicLink = link.url;
     const message = `Hi ${caseData.borrowerName}, I am Nova from RE3OLV. I have a debt relief proposal ready for you. View here: ${magicLink}`;
 
     await this.prisma.case.update({
-      where: { id: caseId },
+      where: { id: caseId, organizationId },
       data: {
         lastNudgedAt: new Date(),
       },
@@ -202,6 +212,62 @@ export class CasesService {
     });
   }
 
+  async getBorrowerPortalCase(id: string) {
+    return this.prisma.case.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        borrowerName: true,
+        isSME: true,
+        founderName: true,
+        founderImpact: true,
+        verificationMethod: true,
+        totalAmount: true,
+        status: true,
+        paidAmount: true,
+        isFeeFrozen: true,
+        penaltyWaived: true,
+        hardshipReason: true,
+        selectedOptionId: true,
+      },
+    });
+  }
+
+  async getBorrowerDebtDetails(id: string) {
+    return this.prisma.case.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        borrowerName: true,
+        totalAmount: true,
+        externalDebts: {
+          select: { id: true, creditorName: true, amount: true, status: true, type: true },
+        },
+      },
+    });
+  }
+
+  async getBorrowerBranding(id: string) {
+    const caseData = await this.prisma.case.findUnique({
+      where: { id },
+      select: {
+        organization: {
+          select: { primaryColor: true, logoUrl: true },
+        },
+      },
+    });
+    return caseData?.organization ?? null;
+  }
+
+  async restructureDebtForBorrower(caseId: string) {
+    const caseData = await this.prisma.case.findUnique({
+      where: { id: caseId },
+      select: { organizationId: true },
+    });
+    if (!caseData) return null;
+    return this.restructureDebt(caseId, caseData.organizationId);
+  }
+
   async getSettlementOptions(caseId: string) {
     const caseData = await this.findOne(caseId);
     if (!caseData) return null;
@@ -248,6 +314,7 @@ export class CasesService {
         status: 'RESOLVED',
         selectedOptionId: optionId,
       },
+      select: { id: true, status: true, selectedOptionId: true },
     });
   }
 
@@ -259,6 +326,7 @@ export class CasesService {
         paidAmount: amount,
         settledAt: new Date(),
       },
+      select: { id: true, status: true, paidAmount: true, settledAt: true },
     });
   }
 
@@ -311,6 +379,13 @@ export class CasesService {
         penaltyWaived: 50.0,
         hardshipReason,
       },
+      select: {
+        id: true,
+        status: true,
+        isFeeFrozen: true,
+        penaltyWaived: true,
+        hardshipReason: true,
+      },
     });
   }
 
@@ -328,11 +403,22 @@ export class CasesService {
       data: {
         isFeeFrozen: freeze,
       },
+      select: { id: true, isFeeFrozen: true },
     });
   }
 
-  async getROIStats(organizationId?: string) {
-    const cases = await this.findAll(organizationId);
+  async getROIStats(organizationId: string) {
+    const cases = await this.prisma.case.findMany({
+      where: { organizationId },
+      select: {
+        totalAmount: true,
+        penaltyWaived: true,
+        status: true,
+        paidAmount: true,
+        magicLinkCreatedAt: true,
+        settledAt: true,
+      },
+    });
 
     let totalManaged = 0;
     let totalCollected = 0;
@@ -400,9 +486,9 @@ export class CasesService {
     });
   }
 
-  async restructureDebt(caseId: string) {
+  async restructureDebt(caseId: string, organizationId: string) {
     const caseData = await this.prisma.case.findUnique({
-      where: { id: caseId },
+      where: { id: caseId, organizationId },
       include: {
         externalDebts: true,
         organization: true,
@@ -474,12 +560,12 @@ export class CasesService {
     };
   }
 
-  async nudgeApproved(caseId: string) {
-    const result = await this.restructureDebt(caseId);
+  async nudgeApproved(caseId: string, organizationId: string) {
+    const result = await this.restructureDebt(caseId, organizationId);
     if (!result) return null;
 
     const caseData = await this.prisma.case.findUnique({
-      where: { id: caseId },
+      where: { id: caseId, organizationId },
     });
 
     const monthlyPayment = Math.round(result.singleMonthlyPayment);
@@ -496,12 +582,12 @@ export class CasesService {
     return { message, downloadLink };
   }
 
-  async generateOfferPdf(caseId: string) {
-    const result = await this.restructureDebt(caseId);
+  async generateOfferPdf(caseId: string, organizationId: string) {
+    const result = await this.restructureDebt(caseId, organizationId);
     if (!result) return null;
 
     const caseData = await this.prisma.case.findUnique({
-      where: { id: caseId },
+      where: { id: caseId, organizationId },
     });
 
     return {
@@ -510,11 +596,12 @@ export class CasesService {
     };
   }
 
-  async deleteCaseData(caseId: string) {
+  async deleteCaseData(caseId: string, organizationId: string) {
     // GDPR 'Right to be Forgotten' - Cascade deletion handled by relations
-    return this.prisma.case.delete({
-      where: { id: caseId },
+    const result = await this.prisma.case.deleteMany({
+      where: { id: caseId, organizationId },
     });
+    return { deleted: result.count === 1 };
   }
 
   async logComplianceAction(caseId: string, action: string, reasoning: string) {

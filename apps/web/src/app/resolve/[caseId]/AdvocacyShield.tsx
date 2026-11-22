@@ -15,13 +15,14 @@ interface Message {
 
 interface AdvocacyShieldProps {
   caseId: string;
+  token: string;
   isFeeFrozen: boolean;
   penaltyWaived: number;
   hardshipReason: string | null;
   isSME?: boolean;
 }
 
-export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipReason, isSME }: AdvocacyShieldProps) {
+export function AdvocacyShield({ caseId, token, isFeeFrozen, penaltyWaived, hardshipReason, isSME }: AdvocacyShieldProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,7 +37,9 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const history = await fetchApi<any[]>(`/cases/${caseId}/chat-history`);
+        const history = await fetchApi<any[]>(`/cases/${caseId}/chat`, {
+          headers: { 'x-borrower-token': token },
+        });
         if (history.length > 0) {
           setMessages(history.map(m => ({ role: m.sender as 'NOVA' | 'USER', content: m.content })));
           setConsentGranted(true);
@@ -56,7 +59,7 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
     };
 
     fetchHistory();
-  }, [caseId]);
+  }, [caseId, token]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -73,8 +76,9 @@ export function AdvocacyShield({ caseId, isFeeFrozen, penaltyWaived, hardshipRea
     setLoading(true);
 
     try {
-      const analysis = await fetchApi<any>(`/cases/${caseId}/chat`, {
+      const analysis = await fetchApi<any>(`/cases/${caseId}/hardship`, {
         method: 'POST',
+        headers: { 'x-borrower-token': token },
         body: JSON.stringify({ story: userMessage }),
       });
       

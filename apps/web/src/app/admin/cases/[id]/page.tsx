@@ -93,7 +93,7 @@ export default function CaseDetailPage() {
     if (!caseData) return;
     setActionLoading(true);
     try {
-      await fetchApi(`/cases/${id}/toggle-freeze`, {
+      await fetchApi(`/cases/${id}/freeze`, {
         method: 'POST',
         body: JSON.stringify({ freeze: !caseData.isFeeFrozen }),
       });

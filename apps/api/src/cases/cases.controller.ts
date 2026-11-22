@@ -5,7 +5,6 @@ import {
   Body,
   Param,
   NotFoundException,
-  Query,
   UseGuards,
   Req,
   Delete,
@@ -17,14 +16,15 @@ import { AdvocacyBrainService } from './advocacy-brain.service.js';
 import { LinkService } from './link.service.js';
 import { ProviderOrchestratorService } from './provider-orchestrator.service.js';
 import { IntegrationOrchestratorService } from './integration-orchestrator.service.js';
+import { BorrowerTokenGuard } from './borrower-token.guard.js';
 import { RolesGuard } from '../auth/roles.guard.js';
-import { Roles } from '../auth/roles.decorator.js';
-import { ApiOperation, ApiResponse, ApiTags, ApiHeader } from '@nestjs/swagger';
+import { PublicRoute, Roles } from '../auth/roles.decorator.js';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 
 @ApiTags('cases')
-@ApiHeader({ name: 'x-organization-id', description: 'Tenant Identifier' })
+@ApiBearerAuth()
 @Controller('cases')
 @UseGuards(RolesGuard)
 export class CasesController {
@@ -46,7 +46,7 @@ export class CasesController {
   }
 
   @Post('regions/:countryCode/config')
-  @Roles('MANAGER')
+  @Roles('PLATFORM_ADMIN')
   @ApiOperation({
     summary: 'Regional: Update country config (Adapters & Compliance)',
   })
@@ -105,6 +105,15 @@ export class CasesController {
     );
   }
 
+  @Post(':id/nudge')
+  @Roles('AGENT')
+  @ApiOperation({ summary: 'Prepare a borrower outreach message' })
+  async nudgeCase(@Param('id') id: string, @Req() req: Request) {
+    const result = await this.casesService.nudgeCase(id, req['orgId'] as string);
+    if (!result) throw new NotFoundException('Case not found in your organization');
+    return result;
+  }
+
   @Post('upload')
   @Roles('MANAGER')
   @UseInterceptors(FileInterceptor('file'))
@@ -120,34 +129,77 @@ export class CasesController {
   @Roles('AGENT', 'MANAGER')
   @ApiOperation({ summary: 'Retrieve specific case details' })
   async findOne(@Param('id') id: string, @Req() req: Request) {
-    const c = await this.casesService.findOne(id);
-    if (!c || c.organizationId !== req['orgId']) {
+    const c = await this.casesService.findOne(id, req['orgId'] as string);
+    if (!c) {
       throw new NotFoundException(
         `Case with ID ${id} not found in your organization`,
       );
     }
-    return c;
+    const safeCase = Object.fromEntries(
+      Object.entries(c).filter(([key]) => key !== 'magicToken' && key !== 'encryptedData'),
+    );
+    return safeCase;
+  }
+
+  @Get(':id/portal')
+  @PublicRoute()
+  @UseGuards(BorrowerTokenGuard)
+  @ApiOperation({ summary: 'Retrieve borrower portal case details' })
+  async getBorrowerPortalCase(@Param('id') id: string) {
+    const borrowerCase = await this.casesService.getBorrowerPortalCase(id);
+    if (!borrowerCase) throw new NotFoundException('Case not found');
+    return borrowerCase;
+  }
+
+  @Get(':id/borrower-debts')
+  @PublicRoute()
+  @UseGuards(BorrowerTokenGuard)
+  @ApiOperation({ summary: 'Retrieve the borrower’s linked debt details' })
+  async getBorrowerDebtDetails(@Param('id') id: string) {
+    const debts = await this.casesService.getBorrowerDebtDetails(id);
+    if (!debts) throw new NotFoundException('Case not found');
+    return debts;
+  }
+
+  @Get(':id/borrower-branding')
+  @PublicRoute()
+  @UseGuards(BorrowerTokenGuard)
+  @ApiOperation({ summary: 'Retrieve branding for the borrower’s case' })
+  async getBorrowerBranding(@Param('id') id: string) {
+    return this.casesService.getBorrowerBranding(id);
+  }
+
+  @Post(':id/borrower-restructure')
+  @PublicRoute()
+  @UseGuards(BorrowerTokenGuard)
+  @ApiOperation({ summary: 'Calculate a borrower debt consolidation proposal' })
+  async restructureDebtForBorrower(@Param('id') id: string) {
+    const result = await this.casesService.restructureDebtForBorrower(id);
+    if (!result) throw new NotFoundException('Case not found');
+    return result;
   }
 
   @Post(':id/magic-link')
   @Roles('AGENT')
   @ApiOperation({ summary: 'Generate a magic link for borrower outreach' })
-  async generateMagicLink(@Param('id') id: string) {
-    return this.linkService.generateMagicLink(id);
+  async generateMagicLink(@Param('id') id: string, @Req() req: Request) {
+    const link = await this.linkService.generateMagicLink(id, req['orgId'] as string);
+    if (!link) throw new NotFoundException('Case not found in your organization');
+    return link;
   }
 
-  @Get(':id/track')
+  @Post(':id/track')
+  @PublicRoute()
+  @UseGuards(BorrowerTokenGuard)
   @ApiOperation({ summary: 'Track borrower view' })
-  async trackView(@Param('id') id: string, @Query('token') token?: string) {
-    if (token) {
-      const isValid = await this.linkService.validateToken(id, token);
-      if (!isValid) throw new NotFoundException('Invalid or expired token');
-    }
+  async trackView(@Param('id') id: string) {
     await this.casesService.trackView(id);
     return { status: 'tracked' };
   }
 
   @Get(':id/settlement-options')
+  @PublicRoute()
+  @UseGuards(BorrowerTokenGuard)
   @ApiOperation({ summary: 'Retrieve available settlement options' })
   async getOptions(@Param('id') id: string) {
     const options = await this.casesService.getSettlementOptions(id);
@@ -158,6 +210,8 @@ export class CasesController {
   }
 
   @Post(':id/resolve')
+  @PublicRoute()
+  @UseGuards(BorrowerTokenGuard)
   @ApiOperation({ summary: 'Accept a settlement option' })
   async resolveCase(
     @Param('id') id: string,
@@ -171,6 +225,8 @@ export class CasesController {
   }
 
   @Post(':id/settle')
+  @PublicRoute()
+  @UseGuards(BorrowerTokenGuard)
   @ApiOperation({ summary: 'Settle case manually with custom amount' })
   async settleCase(@Param('id') id: string, @Body('amount') amount: number) {
     const updatedCase = await this.casesService.settleCase(id, amount);
@@ -181,12 +237,16 @@ export class CasesController {
   }
 
   @Post(':id/hardship')
+  @PublicRoute()
+  @UseGuards(BorrowerTokenGuard)
   @ApiOperation({ summary: 'Process borrower hardship story via AI' })
   async processHardship(@Param('id') id: string, @Body('story') story: string) {
     return this.advocacyBrainService.processHardshipStory(id, story);
   }
 
   @Get(':id/chat')
+  @PublicRoute()
+  @UseGuards(BorrowerTokenGuard)
   @ApiOperation({ summary: 'Retrieve chat history' })
   async getChatHistory(@Param('id') id: string) {
     return this.casesService.getChatHistory(id);
@@ -195,7 +255,8 @@ export class CasesController {
   @Post(':id/advocacy')
   @Roles('AGENT')
   @ApiOperation({ summary: 'Manually apply Advocacy Shield' })
-  async applyAdvocacy(@Param('id') id: string) {
+  async applyAdvocacy(@Param('id') id: string, @Req() req: Request) {
+    await this.assertTenantCase(id, req['orgId'] as string);
     const updatedCase = await this.casesService.triggerAdvocacy(
       id,
       'MANUAL_OVERRIDE',
@@ -209,7 +270,12 @@ export class CasesController {
   @Post(':id/freeze')
   @Roles('AGENT')
   @ApiOperation({ summary: 'Toggle fee freeze' })
-  async toggleFreeze(@Param('id') id: string, @Body('freeze') freeze: boolean) {
+  async toggleFreeze(
+    @Param('id') id: string,
+    @Body('freeze') freeze: boolean,
+    @Req() req: Request,
+  ) {
+    await this.assertTenantCase(id, req['orgId'] as string);
     const updatedCase = await this.casesService.toggleFeeFreeze(id, freeze);
     if (!updatedCase) {
       throw new NotFoundException(`Case with ID ${id} not found`);
@@ -218,14 +284,14 @@ export class CasesController {
   }
 
   @Get('admin/roi')
-  @Roles('MANAGER')
+  @Roles('AGENT', 'MANAGER')
   @ApiOperation({ summary: 'Retrieve ROI statistics' })
   async getROI(@Req() req: Request) {
     return this.casesService.getROIStats(req['orgId'] as string);
   }
 
   @Get('admin/stats')
-  @Roles('MANAGER')
+  @Roles('AGENT', 'MANAGER')
   @ApiOperation({ summary: 'Retrieve administrative statistics' })
   async getAdminStats(@Req() req: Request) {
     return this.casesService.getAdminStats(req['orgId'] as string);
@@ -251,8 +317,11 @@ export class CasesController {
   @Post(':id/restructure')
   @Roles('AGENT')
   @ApiOperation({ summary: 'Restructure case debt' })
-  async restructure(@Param('id') id: string) {
-    const result = await this.casesService.restructureDebt(id);
+  async restructure(@Param('id') id: string, @Req() req: Request) {
+    const result = await this.casesService.restructureDebt(
+      id,
+      req['orgId'] as string,
+    );
     if (!result) {
       throw new NotFoundException(`Case with ID ${id} not found`);
     }
@@ -262,7 +331,12 @@ export class CasesController {
   @Delete(':id')
   @Roles('MANAGER')
   @ApiOperation({ summary: 'Delete case data' })
-  async deleteCase(@Param('id') id: string) {
-    return this.casesService.deleteCaseData(id);
+  async deleteCase(@Param('id') id: string, @Req() req: Request) {
+    return this.casesService.deleteCaseData(id, req['orgId'] as string);
+  }
+
+  private async assertTenantCase(caseId: string, organizationId: string) {
+    const found = await this.casesService.findOne(caseId, organizationId);
+    if (!found) throw new NotFoundException('Case not found in your organization');
   }
 }
