@@ -57,7 +57,10 @@ export default function RegionDetailSettingsPage() {
     try {
       await fetchApi(`/cases/regions/${countryCode}/config`, {
         method: 'POST',
-        body: JSON.stringify(config),
+          body: JSON.stringify({
+            activeAdapters: config?.activeAdapters,
+            complianceRules: config?.complianceRules,
+          }),
       });
       toast.success(`Regional protocol for ${countryCode} updated`);
     } catch (error) {

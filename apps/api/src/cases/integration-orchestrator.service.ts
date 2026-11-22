@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service.js';
+import type { RegionConfigDto } from './dto/region-config.dto.js';
 
 export interface PaymentProvider {
   createSettlementLink(amount: number, currency: string): Promise<string>;
@@ -70,7 +71,7 @@ export class IntegrationOrchestratorService {
     return this.prisma.regionConfig.findUnique({ where: { countryCode } });
   }
 
-  async updateRegionConfig(countryCode: string, data: any) {
+  async updateRegionConfig(countryCode: string, data: RegionConfigDto) {
     return this.prisma.regionConfig.upsert({
       where: { countryCode },
       update: {

@@ -10,6 +10,8 @@ import {
   Delete,
   UseInterceptors,
   UploadedFile,
+  Headers,
+  BadRequestException,
 } from '@nestjs/common';
 import { CasesService } from './cases.service.js';
 import { AdvocacyBrainService } from './advocacy-brain.service.js';
@@ -22,6 +24,16 @@ import { PublicRoute, Roles } from '../auth/roles.decorator.js';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
+import {
+  BrandingDto,
+  FreezeFeesDto,
+  HardshipStoryDto,
+  ProviderToggleDto,
+  ResolveCaseDto,
+  SettleCaseDto,
+} from './dto/case-write.dto.js';
+import { RegionConfigDto, isIsoCountryCode } from './dto/region-config.dto.js';
+import { PublicRequestLimitGuard } from './public-request-limit.guard.js';
 
 @ApiTags('cases')
 @ApiBearerAuth()
@@ -52,10 +64,14 @@ export class CasesController {
   })
   async updateRegionConfig(
     @Param('countryCode') countryCode: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: RegionConfigDto,
   ) {
+    const normalizedCountryCode = countryCode.toUpperCase();
+    if (!isIsoCountryCode(normalizedCountryCode)) {
+      throw new BadRequestException('countryCode must be an ISO alpha-2 code');
+    }
     return this.integrationOrchestratorService.updateRegionConfig(
-      countryCode,
+      normalizedCountryCode,
       body,
     );
   }
@@ -96,7 +112,7 @@ export class CasesController {
   async toggleProvider(
     @Param('id') id: string,
     @Req() req: Request,
-    @Body() body: { active: boolean },
+    @Body() body: ProviderToggleDto,
   ) {
     return this.providerOrchestratorService.toggleProvider(
       req['orgId'] as string,
@@ -116,13 +132,41 @@ export class CasesController {
 
   @Post('upload')
   @Roles('MANAGER')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseGuards(PublicRequestLimitGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 0, parts: 1 },
+      fileFilter: (_request, file, callback) => {
+        const isCsvName = file.originalname.toLowerCase().endsWith('.csv');
+        const isCsvType = [
+          'text/csv',
+          'application/csv',
+          'application/vnd.ms-excel',
+        ].includes(file.mimetype.toLowerCase());
+        if (!isCsvName || !isCsvType) {
+          callback(new BadRequestException('Upload must be a CSV file'), false);
+          return;
+        }
+        callback(null, true);
+      },
+    }),
+  )
   @ApiOperation({ summary: 'Bulk upload cases via CSV' })
   async uploadCases(
     @UploadedFile() file: Express.Multer.File,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Req() req: Request,
   ) {
-    return this.casesService.batchUpload(file.buffer, req['orgId'] as string);
+    if (!file?.buffer?.length) throw new BadRequestException('CSV file is required');
+    if (!idempotencyKey || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
+      throw new BadRequestException('A UUID Idempotency-Key header is required');
+    }
+    return this.casesService.batchUpload(
+      file.buffer,
+      req['orgId'] as string,
+      file.originalname.replace(/[^\w. -]/g, '_').slice(0, 120),
+      idempotencyKey.toLowerCase(),
+    );
   }
 
   @Get(':id')
@@ -143,7 +187,7 @@ export class CasesController {
 
   @Get(':id/portal')
   @PublicRoute()
-  @UseGuards(BorrowerTokenGuard)
+  @UseGuards(PublicRequestLimitGuard, BorrowerTokenGuard)
   @ApiOperation({ summary: 'Retrieve borrower portal case details' })
   async getBorrowerPortalCase(@Param('id') id: string) {
     const borrowerCase = await this.casesService.getBorrowerPortalCase(id);
@@ -153,7 +197,7 @@ export class CasesController {
 
   @Get(':id/borrower-debts')
   @PublicRoute()
-  @UseGuards(BorrowerTokenGuard)
+  @UseGuards(PublicRequestLimitGuard, BorrowerTokenGuard)
   @ApiOperation({ summary: 'Retrieve the borrower’s linked debt details' })
   async getBorrowerDebtDetails(@Param('id') id: string) {
     const debts = await this.casesService.getBorrowerDebtDetails(id);
@@ -163,7 +207,7 @@ export class CasesController {
 
   @Get(':id/borrower-branding')
   @PublicRoute()
-  @UseGuards(BorrowerTokenGuard)
+  @UseGuards(PublicRequestLimitGuard, BorrowerTokenGuard)
   @ApiOperation({ summary: 'Retrieve branding for the borrower’s case' })
   async getBorrowerBranding(@Param('id') id: string) {
     return this.casesService.getBorrowerBranding(id);
@@ -171,7 +215,7 @@ export class CasesController {
 
   @Post(':id/borrower-restructure')
   @PublicRoute()
-  @UseGuards(BorrowerTokenGuard)
+  @UseGuards(PublicRequestLimitGuard, BorrowerTokenGuard)
   @ApiOperation({ summary: 'Calculate a borrower debt consolidation proposal' })
   async restructureDebtForBorrower(@Param('id') id: string) {
     const result = await this.casesService.restructureDebtForBorrower(id);
@@ -190,7 +234,7 @@ export class CasesController {
 
   @Post(':id/track')
   @PublicRoute()
-  @UseGuards(BorrowerTokenGuard)
+  @UseGuards(PublicRequestLimitGuard, BorrowerTokenGuard)
   @ApiOperation({ summary: 'Track borrower view' })
   async trackView(@Param('id') id: string) {
     await this.casesService.trackView(id);
@@ -199,7 +243,7 @@ export class CasesController {
 
   @Get(':id/settlement-options')
   @PublicRoute()
-  @UseGuards(BorrowerTokenGuard)
+  @UseGuards(PublicRequestLimitGuard, BorrowerTokenGuard)
   @ApiOperation({ summary: 'Retrieve available settlement options' })
   async getOptions(@Param('id') id: string) {
     const options = await this.casesService.getSettlementOptions(id);
@@ -211,13 +255,13 @@ export class CasesController {
 
   @Post(':id/resolve')
   @PublicRoute()
-  @UseGuards(BorrowerTokenGuard)
+  @UseGuards(PublicRequestLimitGuard, BorrowerTokenGuard)
   @ApiOperation({ summary: 'Accept a settlement option' })
   async resolveCase(
     @Param('id') id: string,
-    @Body('optionId') optionId: string,
+    @Body() body: ResolveCaseDto,
   ) {
-    const updatedCase = await this.casesService.resolveCase(id, optionId);
+    const updatedCase = await this.casesService.resolveCase(id, body.optionId);
     if (!updatedCase) {
       throw new NotFoundException(`Case with ID ${id} not found`);
     }
@@ -226,10 +270,10 @@ export class CasesController {
 
   @Post(':id/settle')
   @PublicRoute()
-  @UseGuards(BorrowerTokenGuard)
+  @UseGuards(PublicRequestLimitGuard, BorrowerTokenGuard)
   @ApiOperation({ summary: 'Settle case manually with custom amount' })
-  async settleCase(@Param('id') id: string, @Body('amount') amount: number) {
-    const updatedCase = await this.casesService.settleCase(id, amount);
+  async settleCase(@Param('id') id: string, @Body() body: SettleCaseDto) {
+    const updatedCase = await this.casesService.settleCase(id, body.amount);
     if (!updatedCase) {
       throw new NotFoundException(`Case with ID ${id} not found`);
     }
@@ -238,15 +282,15 @@ export class CasesController {
 
   @Post(':id/hardship')
   @PublicRoute()
-  @UseGuards(BorrowerTokenGuard)
+  @UseGuards(PublicRequestLimitGuard, BorrowerTokenGuard)
   @ApiOperation({ summary: 'Process borrower hardship story via AI' })
-  async processHardship(@Param('id') id: string, @Body('story') story: string) {
-    return this.advocacyBrainService.processHardshipStory(id, story);
+  async processHardship(@Param('id') id: string, @Body() body: HardshipStoryDto) {
+    return this.advocacyBrainService.processHardshipStory(id, body.story.trim());
   }
 
   @Get(':id/chat')
   @PublicRoute()
-  @UseGuards(BorrowerTokenGuard)
+  @UseGuards(PublicRequestLimitGuard, BorrowerTokenGuard)
   @ApiOperation({ summary: 'Retrieve chat history' })
   async getChatHistory(@Param('id') id: string) {
     return this.casesService.getChatHistory(id);
@@ -272,11 +316,11 @@ export class CasesController {
   @ApiOperation({ summary: 'Toggle fee freeze' })
   async toggleFreeze(
     @Param('id') id: string,
-    @Body('freeze') freeze: boolean,
+    @Body() body: FreezeFeesDto,
     @Req() req: Request,
   ) {
     await this.assertTenantCase(id, req['orgId'] as string);
-    const updatedCase = await this.casesService.toggleFeeFreeze(id, freeze);
+    const updatedCase = await this.casesService.toggleFeeFreeze(id, body.freeze);
     if (!updatedCase) {
       throw new NotFoundException(`Case with ID ${id} not found`);
     }
@@ -307,7 +351,7 @@ export class CasesController {
   @Post('admin/branding')
   @Roles('MANAGER')
   @ApiOperation({ summary: 'Update organization branding' })
-  async updateBranding(@Req() req: Request, @Body() body: any) {
+  async updateBranding(@Req() req: Request, @Body() body: BrandingDto) {
     return this.casesService.updateOrganizationBranding(
       req['orgId'] as string,
       body,

@@ -37,7 +37,10 @@ export class AdvocacyBrainService {
     const verificationMethod =
       caseData?.verificationMethod || 'OFFICIAL_REGISTER';
 
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-3-flash' });
+    const model = this.genAI.getGenerativeModel(
+      { model: 'gemini-3-flash' },
+      { timeout: 20_000 },
+    );
 
     const prompt = isSME
       ? `
@@ -63,8 +66,6 @@ export class AdvocacyBrainService {
       const response = await result.response;
       const text = response.text();
 
-      this.logger.log(`AI Text Output: ${text}`);
-
       let analysis = {
         hardshipDetected: false,
         reason: '',
@@ -73,37 +74,47 @@ export class AdvocacyBrainService {
       let novaResponse = isSME
         ? "I understand your business is your life's work. I couldn't detect a specific qualifying hardship yet, but if you have details on client defaults or payroll stress, please share."
         : "I'm sorry to hear that, but I couldn't detect a specific qualifying hardship in your story. If you have more details about job loss or illness, please let me know.";
+      let complianceReasoning: string | undefined;
 
-      if (text.toLowerCase().includes('false') && !isVerified) {
-        analysis.hardshipDetected = false;
-      } else {
-        const jsonMatch = text.match(/\{.*\}/s);
-        if (jsonMatch) {
-          analysis = JSON.parse(jsonMatch[0]);
-        } else if (isVerified) {
+      const jsonMatch = text.match(/\{.*\}/s);
+      if (jsonMatch) {
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(jsonMatch[0]);
+        } catch {
+          parsed = undefined;
+        }
+        if (typeof parsed === 'object' && parsed !== null) {
+          const result = parsed as Record<string, unknown>;
+          const reason =
+            typeof result.reason === 'string'
+              ? result.reason.trim().slice(0, 1000)
+              : '';
           analysis = {
-            hardshipDetected: true,
-            reason:
-              'Financial hardship verified via Open Banking cash flow analysis.',
-            isSMETrigger: false,
+            hardshipDetected: result.hardshipDetected === true && Boolean(reason),
+            reason,
+            isSMETrigger: result.isSMETrigger === true && Boolean(reason),
           };
         }
       }
+      if (isVerified && !analysis.reason) {
+        analysis = {
+          hardshipDetected: true,
+          reason:
+            'Financial hardship verified via Open Banking cash flow analysis.',
+          isSMETrigger: false,
+        };
+      }
 
-      this.logger.log(`Parsed Analysis result: ${JSON.stringify(analysis)}`);
+      this.logger.log(
+        `Hardship analysis completed for ${caseId}; detected=${analysis.hardshipDetected}, verified=${isVerified}`,
+      );
 
       if (analysis.hardshipDetected || isVerified) {
         this.logger.log(
           `Hardship detected for case ${caseId}. Applying Advocacy Shield automatically...`,
         );
-        await this.casesService.applyAdvocacy(caseId, analysis.reason);
-
-        // Log for Compliance Audit
-        await this.casesService.logComplianceAction(
-          caseId,
-          'SHIELD_ACTIVATION',
-          `Hardship detected via AI reasoning: ${analysis.reason}. Verified: ${isVerified}. SME: ${isSME}. Method: ${verificationMethod}`,
-        );
+        complianceReasoning = `Hardship detected via AI reasoning: ${analysis.reason}. Verified: ${isVerified}. SME: ${isSME}. Method: ${verificationMethod}`;
 
         if (isVerified) {
           novaResponse = isSME
@@ -123,25 +134,12 @@ export class AdvocacyBrainService {
         }
       }
 
-      // Persist Nova Response
-      await this.prisma.chatMessage.create({
-        data: {
-          caseId,
-          sender: 'NOVA',
-          content: novaResponse,
-        },
-      });
-
-      // Audit Trail
-      await this.prisma.decisionLog.create({
-        data: {
-          caseId,
-          decisionType: analysis.hardshipDetected
-            ? 'SHIELD_ACTIVATION'
-            : 'AWAITING_MORE_INFO',
-          aiConfidence: 0.95, // Mocked confidence
-          humanReviewerId: null,
-        },
+      await this.casesService.completeHardshipAnalysis(caseId, {
+        hardshipDetected: analysis.hardshipDetected,
+        isVerified,
+        reason: analysis.reason,
+        novaResponse,
+        complianceReasoning,
       });
 
       return analysis;

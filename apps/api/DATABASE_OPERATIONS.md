@@ -4,11 +4,11 @@
 
 Set `DATABASE_URL` to the provider's pooled PostgreSQL connection for API traffic. Set `DIRECT_URL` to a direct connection for Prisma CLI migrations and seeding. Both must use TLS in hosted environments. Store credentials in the deployment secret manager; do not commit a populated `.env` file.
 
-The API uses one Nest-managed Prisma client and pool per application instance. Set `DATABASE_POOL_MAX` against the database's total connection limit and the maximum number of running instances. The pool defaults are configurable with `DATABASE_CONNECTION_TIMEOUT_MS` and `DATABASE_IDLE_TIMEOUT_MS`.
+The API uses one Nest-managed Prisma client and pool per application instance. Set `DATABASE_POOL_MAX` against the database's total connection limit and the maximum number of running instances. Connection, idle, SQL statement, and transaction timeouts are configurable with the `DATABASE_*_MS` variables in `.env.example`.
 
 ## Initial deployment and migrations
 
-The canonical `prisma/migrations/0_init_postgresql` migration is a baseline generated from the current Prisma schema. Review it against the intended production schema and apply it to an empty PostgreSQL database with `pnpm exec prisma migrate deploy` from `apps/api`. For an existing PostgreSQL database, first compare its schema with the baseline and use Prisma's baselining procedure; do not run the initial migration over existing tables. The prior SQLite migration history is retained under `prisma/migrations-sqlite-legacy` and must not be deployed to PostgreSQL.
+The canonical `prisma/migrations/0_init_postgresql` migration is a baseline generated from the current Prisma schema. Review it against the intended production schema and apply it to an empty PostgreSQL database with `pnpm exec prisma migrate deploy` from `apps/api`. For an existing PostgreSQL database, first compare its schema with the baseline and use Prisma's baselining procedure; do not run the initial migration over existing tables. The prior SQLite migration history is retained under `prisma/migrations-sqlite-legacy` and must not be deployed to PostgreSQL. Later schema changes use sequential migrations in `prisma/migrations`; Sprint 3 adds upload idempotency columns after the baseline.
 
 The seed script contains synthetic demo records and personal-looking names. Run it only against an isolated development database, never a production database. Production schema deployment does not require running the seed.
 

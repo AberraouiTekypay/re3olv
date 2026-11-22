@@ -23,6 +23,8 @@ An organization-scoped case deletion endpoint exists. Relation deletion behavior
 ### 3. Institutional Access and Tenant Isolation
 Institutional routes now require an RS256 OIDC access token. The OIDC `sub` must map to a provisioned `User.oidcSubject`; the database role and organization membership determine access. Caller-supplied role and organization headers are not authorization. Case list, detail, update, delete, and outreach operations are scoped to the authenticated organization. Configure the issuer, dedicated API audience, and user mappings before enabling institutional access.
 
+Public borrower routes have in-process rate limits and the hardship model request has a 20-second timeout. The in-process limiter does not coordinate multiple API instances; enforce an additional shared limit at the trusted edge or with shared storage before multi-instance public production traffic.
+
 ## 📝 Institutional Audit Trail
 Some operational actions are recorded in `ActionLog`. The current database does not make these records immutable; preserve and protect audit data through database controls and a verified retention policy. Events include:
 - **NOVA_SHIELD_TRIGGER**: Automatic hardship detection.

@@ -39,8 +39,15 @@ export class PrismaService
         5000,
       ),
       idleTimeoutMillis: positiveInteger('DATABASE_IDLE_TIMEOUT_MS', 30000),
+      statement_timeout: positiveInteger('DATABASE_STATEMENT_TIMEOUT_MS', 15000),
     });
-    super({ adapter });
+    super({
+      adapter,
+      transactionOptions: {
+        maxWait: positiveInteger('DATABASE_TRANSACTION_MAX_WAIT_MS', 5000),
+        timeout: positiveInteger('DATABASE_TRANSACTION_TIMEOUT_MS', 20000),
+      },
+    });
   }
 
   async onModuleInit() {

@@ -1,8 +1,31 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
+import { createHash } from 'crypto';
 import { LinkService } from './link.service.js';
 import { PrismaService } from '../database/prisma.service.js';
+import type { BrandingDto } from './dto/case-write.dto.js';
+
+const MAX_UPLOAD_ROWS = 5000;
+const MAX_AMOUNT = 100_000_000;
+
+type UploadRow = {
+  borrowerName: string;
+  principalAmount: number;
+  totalAmount: number;
+};
+
+type HardshipOutcome = {
+  hardshipDetected: boolean;
+  isVerified: boolean;
+  reason: string;
+  novaResponse: string;
+  complianceReasoning?: string;
+};
 
 @Injectable()
 export class CasesService {
@@ -39,95 +62,156 @@ export class CasesService {
     });
   }
 
-  async createBatchUpload(filename: string, organizationId: string) {
+  async createBatchUpload(
+    filename: string,
+    organizationId: string,
+    idempotencyKey: string,
+    requestHash: string,
+  ) {
     return this.prisma.batchUpload.create({
       data: {
         filename,
         organizationId,
+        idempotencyKey,
+        requestHash,
         status: 'PROCESSING',
       },
     });
   }
 
-  async batchUpload(buffer: Buffer, organizationId: string) {
-    const batch = await this.createBatchUpload('upload.csv', organizationId);
-    // Process in background (simplified for this task)
-    this.processCsv(batch.id, organizationId, buffer);
-    return batch;
+  async batchUpload(
+    buffer: Buffer,
+    organizationId: string,
+    filename: string,
+    idempotencyKey: string,
+  ) {
+    const requestHash = createHash('sha256').update(buffer).digest('hex');
+    let batchId: string;
+    try {
+      const batch = await this.createBatchUpload(
+        filename,
+        organizationId,
+        idempotencyKey,
+        requestHash,
+      );
+      batchId = batch.id;
+    } catch (error) {
+      if (!this.isUniqueConstraintError(error)) throw error;
+      const existing = await this.prisma.batchUpload.findUnique({
+        where: {
+          organizationId_idempotencyKey: { organizationId, idempotencyKey },
+        },
+      });
+      if (!existing) throw error;
+      if (existing.requestHash !== requestHash) {
+        throw new ConflictException(
+          'Idempotency-Key was already used for a different upload',
+        );
+      }
+      return {
+        id: existing.id,
+        status: existing.status,
+        totalRows: existing.totalRows,
+        errorCount: existing.errorCount,
+        replayed: true,
+      };
+    }
+
+    let totalRows = 0;
+    let errorCount = 0;
+    const rows: UploadRow[] = [];
+    try {
+      const parser = Readable.from([buffer]).pipe(
+        csv({
+          strict: true,
+          maxRowBytes: 1024 * 1024,
+          mapHeaders: ({ header }) => header.replace(/^\uFEFF/, '').trim(),
+        }),
+      );
+      try {
+        for await (const row of parser) {
+          totalRows++;
+          if (totalRows > MAX_UPLOAD_ROWS) {
+            throw new BadRequestException(`CSV exceeds the ${MAX_UPLOAD_ROWS} row limit`);
+          }
+          const borrowerName = String(
+            row['Borrower Name'] ?? row.borrowerName ?? row.Name ?? '',
+          ).trim();
+          const principalRaw = String(
+            row.Amount ?? row.principalAmount ?? row.Principal ?? '',
+          ).trim();
+          const penaltyRaw = String(row.Penalty ?? row.penalty ?? '0').trim();
+          const moneyPattern = /^(?:0|[1-9]\d{0,8})(?:\.\d{1,2})?$/;
+          if (
+            !borrowerName ||
+            borrowerName.length > 200 ||
+            !moneyPattern.test(principalRaw) ||
+            !moneyPattern.test(penaltyRaw)
+          ) {
+            errorCount++;
+            continue;
+          }
+          const principalAmount = Number(principalRaw);
+          const penalty = Number(penaltyRaw);
+          if (
+            principalAmount <= 0 ||
+            principalAmount + penalty > MAX_AMOUNT
+          ) {
+            errorCount++;
+            continue;
+          }
+          rows.push({
+            borrowerName,
+            principalAmount,
+            totalAmount: principalAmount + penalty,
+          });
+        }
+      } catch (error) {
+        if (error instanceof BadRequestException) throw error;
+        throw new BadRequestException('CSV file could not be parsed');
+      }
+      if (totalRows === 0) {
+        throw new BadRequestException('CSV must contain at least one data row');
+      }
+      if (errorCount > 0) {
+        throw new BadRequestException(`${errorCount} CSV row(s) failed validation`);
+      }
+
+      await this.prisma.$transaction(async (tx) => {
+        await tx.case.createMany({
+          data: rows.map((row) => ({
+            ...row,
+            organizationId,
+            batchUploadId: batchId,
+            status: 'OPEN',
+          })),
+        });
+        await tx.batchUpload.update({
+          where: { id: batchId },
+          data: { status: 'COMPLETED', totalRows, errorCount: 0 },
+        });
+      });
+      return { id: batchId, status: 'COMPLETED', totalRows, errorCount: 0 };
+    } catch (error) {
+      await this.prisma.batchUpload.update({
+        where: { id: batchId },
+        data: { status: 'FAILED', totalRows, errorCount: Math.max(errorCount, 1) },
+      });
+      throw error;
+    }
+  }
+
+  private isUniqueConstraintError(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === 'P2002'
+    );
   }
 
   async triggerAdvocacy(caseId: string, reason: string) {
-    await this.startAdvocacy(caseId);
     return this.applyAdvocacy(caseId, reason, reason === 'MANUAL_OVERRIDE');
-  }
-
-  async processCsv(batchId: string, organizationId: string, buffer: Buffer) {
-    const results: any[] = [];
-    const stream = Readable.from(buffer);
-    let totalRows = 0;
-    let errorCount = 0;
-
-    return new Promise((resolve, reject) => {
-      stream
-        .pipe(csv())
-        .on('data', (data) => {
-          results.push(data);
-          totalRows++;
-        })
-        .on('end', async () => {
-          try {
-            for (const row of results) {
-              const borrowerName =
-                row['Borrower Name'] || row['borrowerName'] || row['Name'];
-              const principalAmount = parseFloat(
-                row['Amount'] ||
-                  row['principalAmount'] ||
-                  row['Principal'] ||
-                  '0',
-              );
-              const penalty = parseFloat(
-                row['Penalty'] || row['penalty'] || '0',
-              );
-              const totalAmount = principalAmount + penalty;
-
-              if (!borrowerName || isNaN(totalAmount)) {
-                errorCount++;
-                continue;
-              }
-
-              await this.prisma.case.create({
-                data: {
-                  borrowerName,
-                  principalAmount,
-                  totalAmount,
-                  organizationId,
-                  batchUploadId: batchId,
-                  status: 'OPEN',
-                },
-              });
-            }
-
-            await this.prisma.batchUpload.update({
-              where: { id: batchId },
-              data: { status: 'COMPLETED', totalRows, errorCount },
-            });
-            resolve({ totalRows, errorCount });
-          } catch (error) {
-            await this.prisma.batchUpload.update({
-              where: { id: batchId },
-              data: { status: 'FAILED', totalRows, errorCount },
-            });
-            reject(error);
-          }
-        })
-        .on('error', async (error) => {
-          await this.prisma.batchUpload.update({
-            where: { id: batchId },
-            data: { status: 'FAILED', totalRows, errorCount },
-          });
-          reject(error);
-        });
-    });
   }
 
   async nudgeCase(caseId: string, organizationId: string) {
@@ -267,7 +351,10 @@ export class CasesService {
     const caseData = await this.findOne(caseId);
     if (!caseData) return null;
 
-    const total = caseData.totalAmount - (caseData.penaltyWaived || 0);
+    const total = Math.max(
+      0,
+      caseData.totalAmount - (caseData.penaltyWaived || 0) - caseData.paidAmount,
+    );
     const isFrozen = caseData.isFeeFrozen;
 
     return [
@@ -303,43 +390,83 @@ export class CasesService {
   }
 
   async resolveCase(caseId: string, optionId: string) {
-    return this.prisma.case.update({
-      where: { id: caseId },
-      data: {
-        status: 'RESOLVED',
-        selectedOptionId: optionId,
-      },
-      select: { id: true, status: true, selectedOptionId: true },
+    const validOptions = ['lump-sum', 'short-term', 'long-term'];
+    if (!validOptions.includes(optionId)) {
+      throw new BadRequestException('Unknown settlement option');
+    }
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.case.findUnique({
+        where: { id: caseId },
+        select: { id: true, status: true, selectedOptionId: true },
+      });
+      if (!current) return null;
+      if (current.status === 'RESOLVED' && current.selectedOptionId === optionId) {
+        return current;
+      }
+      if (['SETTLED', 'RESOLVED'].includes(current.status)) {
+        throw new BadRequestException('Case is already resolved');
+      }
+      return tx.case.update({
+        where: { id: caseId, status: current.status },
+        data: { status: 'RESOLVED', selectedOptionId: optionId },
+        select: { id: true, status: true, selectedOptionId: true },
+      });
     });
   }
 
   async settleCase(caseId: string, amount: number) {
-    return this.prisma.case.update({
-      where: { id: caseId },
-      data: {
-        status: 'SETTLED',
-        paidAmount: amount,
-        settledAt: new Date(),
-      },
-      select: { id: true, status: true, paidAmount: true, settledAt: true },
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.case.findUnique({
+        where: { id: caseId },
+        select: {
+          id: true,
+          totalAmount: true,
+          penaltyWaived: true,
+          paidAmount: true,
+          status: true,
+          settledAt: true,
+        },
+      });
+      if (!current) return null;
+      if (current.status === 'SETTLED' && current.paidAmount === amount) {
+        return {
+          id: current.id,
+          status: current.status,
+          paidAmount: current.paidAmount,
+          settledAt: current.settledAt,
+        };
+      }
+      if (current.status === 'SETTLED') {
+        throw new BadRequestException('Case is already resolved');
+      }
+      const outstanding = Math.max(
+        0,
+        current.totalAmount - current.penaltyWaived - current.paidAmount,
+      );
+      if (amount > outstanding) {
+        throw new BadRequestException('Settlement amount exceeds the outstanding balance');
+      }
+      return tx.case.update({
+        where: { id: caseId, status: current.status },
+        data: { status: 'SETTLED', paidAmount: current.paidAmount + amount, settledAt: new Date() },
+        select: { id: true, status: true, paidAmount: true, settledAt: true },
+      });
     });
   }
 
   async trackView(caseId: string) {
-    await this.prisma.actionLog.create({
-      data: {
-        caseId,
-        action: 'MAGIC_LINK_VIEW',
-        details: 'User accessed the resolution portal via magic link.',
-      },
-    });
-
-    return this.prisma.case.update({
-      where: { id: caseId },
-      data: {
-        viewCount: { increment: 1 },
-        lastViewedAt: new Date(),
-      },
+    return this.prisma.$transaction(async (tx) => {
+      await tx.actionLog.create({
+        data: {
+          caseId,
+          action: 'MAGIC_LINK_VIEW',
+          details: 'User accessed the resolution portal via magic link.',
+        },
+      });
+      return tx.case.update({
+        where: { id: caseId },
+        data: { viewCount: { increment: 1 }, lastViewedAt: new Date() },
+      });
     });
   }
 
@@ -356,49 +483,106 @@ export class CasesService {
     caseId: string,
     hardshipReason?: string,
     isManual: boolean = false,
+    complianceReasoning?: string,
   ) {
-    await this.prisma.actionLog.create({
-      data: {
-        caseId,
-        action: isManual ? 'MANUAL_OVERRIDE' : 'NOVA_SHIELD_TRIGGER',
-        details: isManual
-          ? 'Agent manually adjusted fees.'
-          : `Nova detected hardship: ${hardshipReason}`,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      await tx.actionLog.create({
+        data: {
+          caseId,
+          action: isManual ? 'MANUAL_OVERRIDE' : 'NOVA_SHIELD_TRIGGER',
+          details: isManual
+            ? 'Agent manually adjusted fees.'
+            : `Nova detected hardship: ${hardshipReason}`,
+        },
+      });
+      if (complianceReasoning) {
+        await tx.complianceAudit.create({
+          data: {
+            caseId,
+            action: 'SHIELD_ACTIVATION',
+            reasoning: complianceReasoning,
+            regulatoryRef: 'EU-AI-ACT-2026-COMPLIANT',
+          },
+        });
+      }
+      return tx.case.update({
+        where: { id: caseId },
+        data: {
+          status: 'ADVOCACY',
+          isFeeFrozen: true,
+          penaltyWaived: 50.0,
+          hardshipReason,
+        },
+        select: {
+          id: true,
+          status: true,
+          isFeeFrozen: true,
+          penaltyWaived: true,
+          hardshipReason: true,
+        },
+      });
     });
+  }
 
-    return this.prisma.case.update({
-      where: { id: caseId },
-      data: {
-        isFeeFrozen: true,
-        penaltyWaived: 50.0,
-        hardshipReason,
-      },
-      select: {
-        id: true,
-        status: true,
-        isFeeFrozen: true,
-        penaltyWaived: true,
-        hardshipReason: true,
-      },
+  async completeHardshipAnalysis(caseId: string, outcome: HardshipOutcome) {
+    return this.prisma.$transaction(async (tx) => {
+      if (outcome.hardshipDetected || outcome.isVerified) {
+        await tx.actionLog.create({
+          data: {
+            caseId,
+            action: 'NOVA_SHIELD_TRIGGER',
+            details: `Nova detected hardship: ${outcome.reason}`,
+          },
+        });
+        await tx.complianceAudit.create({
+          data: {
+            caseId,
+            action: 'SHIELD_ACTIVATION',
+            reasoning: outcome.complianceReasoning ?? outcome.reason,
+            regulatoryRef: 'EU-AI-ACT-2026-COMPLIANT',
+          },
+        });
+        await tx.case.update({
+          where: { id: caseId },
+          data: {
+            status: 'ADVOCACY',
+            isFeeFrozen: true,
+            penaltyWaived: 50,
+            hardshipReason: outcome.reason,
+          },
+        });
+      }
+
+      await tx.chatMessage.create({
+        data: { caseId, sender: 'NOVA', content: outcome.novaResponse },
+      });
+      await tx.decisionLog.create({
+        data: {
+          caseId,
+          decisionType: outcome.hardshipDetected || outcome.isVerified
+            ? 'SHIELD_ACTIVATION'
+            : 'AWAITING_MORE_INFO',
+          aiConfidence: 0.95,
+          humanReviewerId: null,
+        },
+      });
     });
   }
 
   async toggleFeeFreeze(caseId: string, freeze: boolean) {
-    await this.prisma.actionLog.create({
-      data: {
-        caseId,
-        action: 'MANUAL_OVERRIDE',
-        details: `Agent ${freeze ? 'froze' : 'unfroze'} fees manually.`,
-      },
-    });
-
-    return this.prisma.case.update({
-      where: { id: caseId },
-      data: {
-        isFeeFrozen: freeze,
-      },
-      select: { id: true, isFeeFrozen: true },
+    return this.prisma.$transaction(async (tx) => {
+      await tx.actionLog.create({
+        data: {
+          caseId,
+          action: 'MANUAL_OVERRIDE',
+          details: `Agent ${freeze ? 'froze' : 'unfroze'} fees manually.`,
+        },
+      });
+      return tx.case.update({
+        where: { id: caseId },
+        data: { isFeeFrozen: freeze },
+        select: { id: true, isFeeFrozen: true },
+      });
     });
   }
 
@@ -474,7 +658,7 @@ export class CasesService {
     });
   }
 
-  async updateOrganizationBranding(organizationId: string, data: any) {
+  async updateOrganizationBranding(organizationId: string, data: BrandingDto) {
     return this.prisma.organization.update({
       where: { id: organizationId },
       data,

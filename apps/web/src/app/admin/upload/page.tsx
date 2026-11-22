@@ -24,15 +24,21 @@ export default function BulkUploadPage() {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadKeyRef = useRef<string | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      if (selectedFile.type !== 'text/csv' && !selectedFile.name.endsWith('.csv')) {
+      if (!selectedFile.name.toLowerCase().endsWith('.csv')) {
         toast.error('Please upload a CSV file');
         return;
       }
+      if (selectedFile.size > 5 * 1024 * 1024) {
+        toast.error('CSV files must be 5 MB or smaller');
+        return;
+      }
       setFile(selectedFile);
+      uploadKeyRef.current = globalThis.crypto.randomUUID();
       parsePreview(selectedFile);
     }
   };
@@ -66,21 +72,28 @@ export default function BulkUploadPage() {
     formData.append('file', file);
 
     try {
+      const accessToken = await getOidcAccessToken();
       const response = await fetch(`${API_BASE_URL}/cases/upload`, {
         method: 'POST',
-        headers: await getOidcAccessToken().then((token) =>
-          token ? { Authorization: `Bearer ${token}` } : {},
-        ),
+        headers: {
+          'Idempotency-Key': uploadKeyRef.current ?? globalThis.crypto.randomUUID(),
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: formData,
       });
 
-      if (!response.ok) throw new Error('Upload failed');
+      const result = await response.json();
+      if (!response.ok || result.status !== 'COMPLETED') {
+        throw new Error(result.message || `Upload status: ${result.status || 'failed'}`);
+      }
       
       setProgress(100);
       toast.success('Bulk ingestion completed successfully');
       setTimeout(() => router.push('/agent/dashboard'), 1500);
     } catch (error) {
-      toast.error('Upload failed: Check file format');
+      toast.error(
+        error instanceof Error ? `Upload failed: ${error.message}` : 'Upload failed',
+      );
       setProgress(0);
     } finally {
       setLoading(false);
@@ -88,7 +101,7 @@ export default function BulkUploadPage() {
   };
 
   const downloadTemplate = () => {
-    const csvContent = "Borrower Name,Amount,Penalty,Phone\nJohn Doe,1500,150,+123456789\nJane Smith,2800,300,+987654321";
+    const csvContent = "Borrower Name,Amount,Penalty\nJohn Doe,1500,150\nJane Smith,2800,300";
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -220,7 +233,7 @@ export default function BulkUploadPage() {
               <div>
                 <h4 className="font-black text-slate-900 mb-1 uppercase text-sm">Regulatory Header Sync</h4>
                 <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                  Ensure your headers exactly match: <span className="font-mono text-indigo-600">Borrower Name, Amount, Penalty</span>. Phone is optional but recommended.
+                  Use these headers: <span className="font-mono text-indigo-600">Borrower Name, Amount, Penalty</span>. Amount is required; Penalty may be zero.
                 </p>
               </div>
             </CardContent>

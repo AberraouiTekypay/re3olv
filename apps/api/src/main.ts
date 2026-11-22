@@ -6,10 +6,25 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const trustProxyHops = process.env.TRUST_PROXY_HOPS;
+  if (trustProxyHops !== undefined) {
+    const hops = Number(trustProxyHops);
+    if (!Number.isSafeInteger(hops) || hops < 0 || hops > 10) {
+      throw new Error('TRUST_PROXY_HOPS must be an integer from 0 to 10');
+    }
+    app.getHttpAdapter().getInstance().set('trust proxy', hops);
+  }
   app.enableShutdownHooks();
   app.enableCors();
   app.setGlobalPrefix('api');
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: false },
+    }),
+  );
   app.useGlobalFilters(new GlobalErrorFilter());
 
   const config = new DocumentBuilder()

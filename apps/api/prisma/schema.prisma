@@ -112,11 +112,15 @@ model BatchUpload {
   status         String       @default("PROCESSING") // PROCESSING, COMPLETED, FAILED
   totalRows      Int          @default(0)
   errorCount     Int          @default(0)
+  idempotencyKey String?
+  requestHash    String?
   cases          Case[]
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+
+  @@unique([organizationId, idempotencyKey])
 }
 
 model ComplianceAudit {
