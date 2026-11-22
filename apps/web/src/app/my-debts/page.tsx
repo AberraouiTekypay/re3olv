@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { ShieldCheck, Wallet, ArrowRight, TrendingDown, Sparkles, Building2, Landmark, PieChart, Activity, AlertCircle, Download } from 'lucide-react';
+import { Wallet, TrendingDown, Building2, Landmark, PieChart, Activity, AlertCircle } from 'lucide-react';
 import { fetchApi } from '@/lib/api-client';
 import { toast } from 'sonner';
 
@@ -24,14 +23,6 @@ interface CaseData {
   externalDebts: ExternalDebt[];
 }
 
-interface RestructureData {
-  totalExposure: number;
-  singleMonthlyPayment: number;
-  letterOfIntent: string;
-  savingsPerMonth: number;
-  numDebts: number;
-}
-
 interface BrandingData {
   primaryColor: string;
   logoUrl: string;
@@ -42,7 +33,6 @@ function MyDebtsContent() {
   const caseId = searchParams.get('caseId');
   const token = searchParams.get('token');
   const [caseData, setCaseData] = useState<CaseData | null>(null);
-  const [restructure, setRestructure] = useState<RestructureData | null>(null);
   const [branding, setBranding] = useState<BrandingData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -56,12 +46,8 @@ function MyDebtsContent() {
 
   const fetchData = async () => {
     try {
-      const [data, restData, brandData] = await Promise.all([
+      const [data, brandData] = await Promise.all([
         fetchApi<CaseData>(`/cases/${caseId}/borrower-debts`, {
-          headers: { 'x-borrower-token': token! },
-        }),
-        fetchApi<RestructureData>(`/cases/${caseId}/borrower-restructure`, {
-          method: 'POST',
           headers: { 'x-borrower-token': token! },
         }),
         fetchApi<BrandingData>(`/cases/${caseId}/borrower-branding`, {
@@ -69,7 +55,6 @@ function MyDebtsContent() {
         }),
       ]);
       setCaseData(data);
-      setRestructure(restData);
       setBranding(brandData);
     } catch (error) {
       toast.error('Failed to retrieve your debt portfolio');
@@ -180,54 +165,14 @@ function MyDebtsContent() {
         </div>
 
         <div className="space-y-8">
-          <Card className="border-0 shadow-2xl rounded-[2.5rem] text-white overflow-hidden relative" style={{ backgroundColor: primaryColor }}>
-            <div className="absolute inset-0 bg-slate-900/50 opacity-10" />
-            <CardHeader className="relative z-10">
-              <div className="bg-white/10 w-fit p-3 rounded-2xl mb-4">
-                <Sparkles size={24} className="text-indigo-300" />
-              </div>
-              <CardTitle className="text-xl font-black">Consolidation Offer</CardTitle>
-              <CardDescription className="text-indigo-300 font-medium italic">Partner Bank: 2026-X Portfolio</CardDescription>
+          <Card className="border-0 shadow-xl rounded-3xl bg-white overflow-hidden border border-slate-100">
+            <CardHeader>
+              <CardTitle className="text-gray-900 text-sm font-black uppercase tracking-widest">Restructuring offers</CardTitle>
+              <CardDescription>Offers will appear here after an authorized lender configures and approves live terms.</CardDescription>
             </CardHeader>
-            <CardContent className="relative z-10 space-y-6">
-              <div className="p-6 bg-white/5 rounded-3xl border border-white/10 space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-indigo-300 uppercase">Single Monthly Payment</span>
-                  <span className="text-2xl font-black text-white">${restructure?.singleMonthlyPayment.toLocaleString(undefined, { maximumFractionDigits: 0 })}/mo</span>
-                </div>
-                <div className="flex justify-between items-center border-t border-white/10 pt-4">
-                  <span className="text-xs font-bold text-green-400 uppercase italic">Monthly Savings</span>
-                  <span className="text-xl font-black text-green-400">+${restructure?.savingsPerMonth.toLocaleString(undefined, { maximumFractionDigits: 0 })}/mo</span>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 text-sm font-medium bg-white/5 p-4 rounded-2xl border border-white/10">
-                  <ShieldCheck size={18} className="text-green-400" />
-                  <span>Restructured APR: 12% Fixed</span>
-                </div>
-                <div className="flex items-center gap-3 text-sm font-medium bg-white/5 p-4 rounded-2xl border border-white/10">
-                  <Building2 size={18} className="text-indigo-300" />
-                  <span>Consolidates {restructure?.numDebts} institutional debts</span>
-                </div>
-              </div>
-
-              <Button className="w-full h-14 bg-white hover:bg-slate-100 rounded-2xl font-black uppercase tracking-tighter shadow-2xl flex gap-2" style={{ color: primaryColor }}>
-                Apply for Consolidation <ArrowRight size={18} />
-              </Button>
-              <Button 
-                variant="outline"
-                className="w-full h-12 bg-white/5 border-white/20 text-white hover:bg-white/10 rounded-2xl font-bold gap-2"
-                onClick={() => window.open(`http://localhost:3001/api/cases/${caseId}/offer-pdf`, '_blank')}
-              >
-                <Download size={18} /> Download Official Offer
-              </Button>
+            <CardContent className="text-sm text-slate-600">
+              No lender-backed restructuring offer is currently available for this account.
             </CardContent>
-            <CardFooter className="relative z-10 bg-black/20 py-4 px-6">
-              <p className="text-[10px] font-bold text-indigo-300 uppercase leading-tight text-center">
-                Moving your debts to a single partner bank reduces global defaults and improves your institutional credit score.
-              </p>
-            </CardFooter>
           </Card>
 
           <Card className="border-0 shadow-xl rounded-3xl bg-white overflow-hidden border border-slate-100">

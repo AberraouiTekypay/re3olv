@@ -22,6 +22,7 @@ interface SettlementOption {
 export function SettlementSelector({ caseId, token, options, initialStatus }: { caseId: string, token: string, options: SettlementOption[], initialStatus: string }) {
   const [loading, setLoading] = useState<string | null>(null);
   const [isPaying, setIsPaying] = useState(false);
+  const livePaymentsAvailable = process.env.NODE_ENV !== 'production';
   const router = useRouter();
 
   React.useEffect(() => {
@@ -53,16 +54,13 @@ export function SettlementSelector({ caseId, token, options, initialStatus }: { 
 
   const handlePayNow = async (amount: number) => {
     setIsPaying(true);
-    // Task 1: 2-second mock delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
     try {
       await fetchApi(`/cases/${caseId}/settle`, {
         method: 'POST',
         headers: { 'x-borrower-token': token },
         body: JSON.stringify({ amount }),
       });
-      toast.success('Payment successful! Redirecting...');
+      toast.success('Sandbox payment recorded. Redirecting...');
       router.push(`/resolve/${caseId}/confirmation?token=${encodeURIComponent(token)}`);
     } catch (error) {
       console.error(error);
@@ -137,10 +135,11 @@ export function SettlementSelector({ caseId, token, options, initialStatus }: { 
                     <div className="bg-indigo-50 text-indigo-700 p-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 mb-2">
                       <Sparkles size={14} /> Plan Active
                     </div>
+                    {!livePaymentsAvailable && <p className="text-center text-sm text-amber-700">Payment processing is unavailable until a live provider is configured.</p>}
                     <Button 
                       className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg font-bold shadow-lg shadow-green-100" 
                       onClick={() => handlePayNow(option.monthlyPayment || option.amount)}
-                      disabled={isPaying}
+                      disabled={isPaying || !livePaymentsAvailable}
                     >
                       <CreditCard className="mr-2" /> Pay Now
                     </Button>

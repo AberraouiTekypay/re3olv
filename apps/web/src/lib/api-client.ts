@@ -1,4 +1,17 @@
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+function resolveApiBaseUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_API_URL;
+  if (!configured) {
+    if (process.env.NODE_ENV === 'production') throw new Error('NEXT_PUBLIC_API_URL must be configured in production');
+    return 'http://localhost:3001/api';
+  }
+  const url = new URL(configured);
+  if (url.username || url.password || url.search || url.hash || (process.env.NODE_ENV === 'production' && url.protocol !== 'https:')) {
+    throw new Error('NEXT_PUBLIC_API_URL must be a valid HTTPS API URL in production');
+  }
+  return configured.replace(/\/+$/, '');
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;

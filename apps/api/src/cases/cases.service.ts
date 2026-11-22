@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
@@ -415,6 +416,9 @@ export class CasesService {
   }
 
   async settleCase(caseId: string, amount: number) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new ServiceUnavailableException('Live payment processing is not configured');
+    }
     return this.prisma.$transaction(async (tx) => {
       const current = await tx.case.findUnique({
         where: { id: caseId },
@@ -666,6 +670,9 @@ export class CasesService {
   }
 
   async restructureDebt(caseId: string, organizationId: string) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new ServiceUnavailableException('Live restructuring offers are not configured');
+    }
     const caseData = await this.prisma.case.findUnique({
       where: { id: caseId, organizationId },
       include: {

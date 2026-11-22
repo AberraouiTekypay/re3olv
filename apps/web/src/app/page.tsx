@@ -76,7 +76,7 @@ export default function PremiumLandingPage() {
             <Link href="#track" className="hover:text-emerald-400 transition-all hover:tracking-[0.3em]">Tracks</Link>
           </div>
           <Link 
-            href="/api/register-redirect" 
+            href="/admin"
             className="group relative px-8 py-3 bg-white text-black font-black rounded-full overflow-hidden transition-all hover:scale-105 active:scale-95 text-[11px] uppercase tracking-widest"
           >
             <span className="relative z-10">Access Portal</span>
@@ -105,7 +105,7 @@ export default function PremiumLandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
               <Link 
-                href="/api/register-redirect" 
+                href="/admin"
                 className="group px-12 py-6 bg-emerald-500 text-black font-black rounded-full transition-all hover:shadow-[0_0_40px_-5px_rgba(16,185,129,0.5)] active:scale-95 text-xs uppercase tracking-[0.3em] flex items-center gap-3"
               >
                 Get Started <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
@@ -153,7 +153,7 @@ export default function PremiumLandingPage() {
                     </div>
                   ))}
                 </div>
-                <Link href="/api/register-redirect" className="inline-flex items-center gap-2 text-emerald-400 font-black text-[10px] uppercase tracking-[0.3em] group-hover:gap-4 transition-all">
+                <Link href="/admin" className="inline-flex items-center gap-2 text-emerald-400 font-black text-[10px] uppercase tracking-[0.3em] group-hover:gap-4 transition-all">
                   Access Borrower Portal <ArrowRight size={14} />
                 </Link>
               </div>
@@ -180,7 +180,7 @@ export default function PremiumLandingPage() {
                     </div>
                   ))}
                 </div>
-                <Link href="/api/register-redirect" className="inline-flex items-center gap-2 text-blue-400 font-black text-[10px] uppercase tracking-[0.3em] group-hover:gap-4 transition-all">
+                <Link href="/admin" className="inline-flex items-center gap-2 text-blue-400 font-black text-[10px] uppercase tracking-[0.3em] group-hover:gap-4 transition-all">
                   MFI Executive Dashboard <ArrowRight size={14} />
                 </Link>
               </div>
@@ -233,7 +233,7 @@ export default function PremiumLandingPage() {
             </div>
 
             <div 
-              onClick={() => window.location.href='/api/register-redirect'}
+              onClick={() => window.location.href='/admin'}
               className="md:col-span-1 p-8 rounded-[3.5rem] bg-emerald-500 flex flex-col items-center justify-center cursor-pointer hover:rotate-2 transition-all active:scale-95 group"
             >
               <Zap className="text-black mb-4 group-hover:scale-125 transition-transform" size={32} />
@@ -254,7 +254,7 @@ export default function PremiumLandingPage() {
             Ready to <br/><span className="text-emerald-500">Restore the Pulse?</span>
           </motion.h2>
           <Link 
-            href="/api/register-redirect" 
+            href="/admin"
             className="inline-block px-16 py-8 bg-white text-black font-black rounded-full transition-all hover:shadow-[0_0_60px_-10px_rgba(255,255,255,0.4)] hover:scale-105 active:scale-95 text-sm uppercase tracking-[0.4em]"
           >
             Start Integration

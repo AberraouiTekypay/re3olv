@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service.js';
 import type { RegionConfigDto } from './dto/region-config.dto.js';
 
@@ -44,6 +44,7 @@ export class IntegrationOrchestratorService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getPaymentAdapter(countryCode: string): Promise<PaymentProvider> {
+    if (process.env.NODE_ENV === 'production') throw new ServiceUnavailableException('Live payment providers are not configured');
     const config = await this.prisma.regionConfig.findUnique({
       where: { countryCode },
     });
@@ -56,6 +57,7 @@ export class IntegrationOrchestratorService {
   }
 
   async getERPAdapter(countryCode: string): Promise<ERPProvider> {
+    if (process.env.NODE_ENV === 'production') throw new ServiceUnavailableException('Live ERP providers are not configured');
     const config = await this.prisma.regionConfig.findUnique({
       where: { countryCode },
     });

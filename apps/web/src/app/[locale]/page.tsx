@@ -1,6 +1,5 @@
 import React from 'react';
 import { useTranslations } from 'next-intl';
-import { WaitlistForm } from '@/components/WaitlistForm';
 import { Scale, Globe, Zap, ArrowRight, ShieldCheck, Check, X } from 'lucide-react';
 
 export default function LandingPage() {
@@ -57,13 +56,18 @@ export default function LandingPage() {
                 ))}
               </div>
               <p className="text-[10px] font-black text-[#2D336B]/40 uppercase tracking-[0.2em] leading-relaxed">
-                Join 2,400+ Advocates <br/>In the Global Waitlist
+                Institutional access is provisioned <br/>by your organization
               </p>
             </div>
           </div>
 
           <div className="animate-in fade-in slide-in-from-right-8 duration-1000 delay-200">
-            <WaitlistForm />
+            <div className="rounded-[2rem] bg-white p-10 shadow-2xl shadow-indigo-900/10 border border-indigo-50 space-y-6">
+              <ShieldCheck size={32} className="text-[#2D336B]" />
+              <h2 className="text-2xl font-black text-[#2D336B]">Institutional access</h2>
+              <p className="text-[#2D336B]/70">Your organization administrator can provision a secure account for you.</p>
+              <a href="/admin" className="inline-flex items-center gap-2 rounded-xl bg-[#2D336B] px-6 py-3 text-sm font-bold text-white">Open sign in <ArrowRight size={16} /></a>
+            </div>
           </div>
         </div>
       </header>

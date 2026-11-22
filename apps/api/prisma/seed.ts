@@ -1,6 +1,10 @@
 import { PrismaClient } from '../generated/prisma/client.js';
 import { PrismaPg } from '@prisma/adapter-pg';
 
+if (process.env.NODE_ENV === 'production') {
+  throw new Error('The synthetic development seed cannot run in production');
+}
+
 const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
 if (!connectionString) throw new Error('DIRECT_URL or DATABASE_URL must be configured to seed');
 const adapter = new PrismaPg({ connectionString });
