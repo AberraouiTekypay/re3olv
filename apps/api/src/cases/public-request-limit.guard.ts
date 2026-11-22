@@ -1,8 +1,9 @@
 import {
   CanActivate,
   ExecutionContext,
+  HttpException,
+  HttpStatus,
   Injectable,
-  TooManyRequestsException,
 } from '@nestjs/common';
 import type { Request } from 'express';
 
@@ -58,7 +59,7 @@ export class PublicRequestLimitGuard implements CanActivate {
         ? this.uploadLimit
         : this.defaultLimit;
     if (window.count > limit) {
-      throw new TooManyRequestsException('Request limit exceeded');
+      throw new HttpException('Request limit exceeded', HttpStatus.TOO_MANY_REQUESTS);
     }
     return true;
   }

@@ -11,10 +11,12 @@ function resolveApiBaseUrl(): string {
   return configured.replace(/\/+$/, '');
 }
 
-export const API_BASE_URL = resolveApiBaseUrl();
+export function getApiBaseUrl(): string {
+  return resolveApiBaseUrl();
+}
 
 export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${getApiBaseUrl()}${endpoint}`;
   const accessToken = typeof window !== 'undefined'
     ? await (await import('@/lib/oidc-client')).getOidcAccessToken()
     : undefined;

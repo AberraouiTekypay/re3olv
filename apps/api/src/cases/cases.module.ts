@@ -11,7 +11,6 @@ import { AuthModule } from '../auth/auth.module.js';
 import { BorrowerTokenGuard } from './borrower-token.guard.js';
 import { DatabaseModule } from '../database/database.module.js';
 import { PublicRequestLimitGuard } from './public-request-limit.guard.js';
-import { PublicRequestLimitGuard } from './public-request-limit.guard.js';
 
 @Module({
   imports: [AuthModule, DatabaseModule],
@@ -24,7 +23,6 @@ import { PublicRequestLimitGuard } from './public-request-limit.guard.js';
     IntegrationOrchestratorService,
     EncryptionService,
     BorrowerTokenGuard,
-    PublicRequestLimitGuard,
     PublicRequestLimitGuard,
   ],
   controllers: [CasesController],

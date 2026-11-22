@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Upload, FileSpreadsheet, Download, CheckCircle, AlertCircle, Loader2, ArrowLeft, Trash2, Activity, Sparkles } from 'lucide-react';
-import { API_BASE_URL } from '@/lib/api-client';
+import { getApiBaseUrl } from '@/lib/api-client';
 import { getOidcAccessToken } from '@/lib/oidc-client';
 import { toast } from 'sonner';
 
@@ -73,7 +73,7 @@ export default function BulkUploadPage() {
 
     try {
       const accessToken = await getOidcAccessToken();
-      const response = await fetch(`${API_BASE_URL}/cases/upload`, {
+      const response = await fetch(`${getApiBaseUrl()}/cases/upload`, {
         method: 'POST',
         headers: {
           'Idempotency-Key': uploadKeyRef.current ?? globalThis.crypto.randomUUID(),
