@@ -1,8 +1,7 @@
 import { Injectable, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { createPublicKey, verify as verifySignature } from 'crypto';
-import { PrismaClient } from '../../generated/prisma/client.js';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import type { AuthenticatedPrincipal } from './roles.guard.js';
+import { PrismaService } from '../database/prisma.service.js';
 
 type JwtHeader = { alg?: string; kid?: string };
 type JwtClaims = {
@@ -18,15 +17,11 @@ type Jwks = { keys: Array<Record<string, unknown> & { kid?: string; use?: string
 
 @Injectable()
 export class OidcAuthService implements OnModuleInit {
-  private readonly prisma: PrismaClient;
   private discoveryCache?: { expiresAt: number; value: OidcDiscovery };
   private jwksCache?: { expiresAt: number; value: Jwks };
   private lastJwksRefreshAt = 0;
 
-  constructor() {
-    const adapter = new PrismaBetterSqlite3({ url: 'file:./dev.db' });
-    this.prisma = new PrismaClient({ adapter });
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   onModuleInit() {
     if (process.env.NODE_ENV !== 'production') return;

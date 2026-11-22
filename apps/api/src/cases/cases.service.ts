@@ -1,20 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '../../generated/prisma/client.js';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { Readable } from 'stream';
 import csv from 'csv-parser';
 import { LinkService } from './link.service.js';
+import { PrismaService } from '../database/prisma.service.js';
 
 @Injectable()
 export class CasesService {
-  private prisma: PrismaClient;
-
-  constructor(private readonly linkService: LinkService) {
-    const adapter = new PrismaBetterSqlite3({
-      url: 'file:./dev.db',
-    });
-    this.prisma = new PrismaClient({ adapter });
-  }
+  constructor(
+    private readonly linkService: LinkService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async findAll(organizationId: string) {
     return this.prisma.case.findMany({

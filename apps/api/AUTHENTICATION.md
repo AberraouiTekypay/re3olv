@@ -6,4 +6,4 @@ An authenticated identity is not granted a role from token claims or request hea
 
 Borrower links use a separate random token, expire after seven days, and can be revoked by issuing a replacement link. Borrower routes accept that token in the `x-borrower-token` header. The case ID alone does not authorize access.
 
-See `.env.example` files for variable names. The current migration lock and runtime adapter use SQLite while the Prisma schema says PostgreSQL. Resolve that mismatch in Sprint 2 before applying migrations to production or enabling real data.
+See `.env.example` for variable names. The API runtime and canonical Prisma migration history now target PostgreSQL. Configure pooled `DATABASE_URL` for application traffic and direct `DIRECT_URL` for Prisma CLI operations. The former SQLite migration history is retained under `prisma/migrations-sqlite-legacy` for audit and is not part of the PostgreSQL migration chain. Provision the PostgreSQL database, review the baseline, and complete data migration and restore rehearsal before enabling real data.

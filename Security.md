@@ -15,10 +15,10 @@ The portal includes an AI disclosure and consent screen. Its text and consent re
 ## 🔐 Data Security & Privacy
 
 ### 1. Encryption Status
-The schema has an `encryptedData` field and an encryption service, but sensitive fields are not consistently encrypted before persistence and the service currently has an unsafe fallback key. Do not store regulated financial or identity data until Sprint 2 replaces the fallback and wires encryption into the data paths.
+The encryption service now requires an explicit production keyring (`ENCRYPTION_KEYS_JSON` plus `CURRENT_ENCRYPTION_KEY_ID`) and uses authenticated, versioned AES-256-GCM envelopes with key IDs. Keep retired keys configured until all ciphertext written under them has been re-encrypted; the service exposes `reencrypt` for that controlled rotation. No fallback key or legacy ciphertext compatibility is provided. The `encryptedData` schema field and service are not yet wired into sensitive-field persistence, so this alone does not make borrower data safe to store.
 
 ### 2. Data Deletion
-An organization-scoped case deletion endpoint exists. Relation deletion behavior and retention requirements have not been verified; do not treat the endpoint as a complete erasure workflow until Sprint 2 validates all dependent records and backups.
+An organization-scoped case deletion endpoint exists. Relation deletion behavior and retention requirements have not been verified; do not treat the endpoint as a complete erasure workflow until dependent records and backup retention have been reviewed.
 
 ### 3. Institutional Access and Tenant Isolation
 Institutional routes now require an RS256 OIDC access token. The OIDC `sub` must map to a provisioned `User.oidcSubject`; the database role and organization membership determine access. Caller-supplied role and organization headers are not authorization. Case list, detail, update, delete, and outreach operations are scoped to the authenticated organization. Configure the issuer, dedicated API audience, and user mappings before enabling institutional access.

@@ -1,28 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { CasesService } from './cases.service.js';
-import { PrismaClient } from '../../generated/prisma/client.js';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
-
 import { EuropeanRegisterService } from './european-register.service.js';
+import { PrismaService } from '../database/prisma.service.js';
 
 @Injectable()
 export class AdvocacyBrainService {
   private readonly logger = new Logger(AdvocacyBrainService.name);
   private genAI: GoogleGenerativeAI;
-  private prisma: PrismaClient;
 
   constructor(
     private casesService: CasesService,
     private europeanRegisterService: EuropeanRegisterService,
+    private readonly prisma: PrismaService,
   ) {
     const apiKey = process.env.GEMINI_API_KEY || '';
     this.genAI = new GoogleGenerativeAI(apiKey);
 
-    const adapter = new PrismaBetterSqlite3({
-      url: 'file:./dev.db',
-    });
-    this.prisma = new PrismaClient({ adapter });
   }
 
   async processHardshipStory(caseId: string, story: string) {

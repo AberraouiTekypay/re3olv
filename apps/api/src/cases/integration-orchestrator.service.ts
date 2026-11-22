@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaClient } from '../../generated/prisma/client.js';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaService } from '../database/prisma.service.js';
 
 export interface PaymentProvider {
   createSettlementLink(amount: number, currency: string): Promise<string>;
@@ -41,14 +40,7 @@ class OracleAdapter implements ERPProvider {
 @Injectable()
 export class IntegrationOrchestratorService {
   private readonly logger = new Logger(IntegrationOrchestratorService.name);
-  private prisma: PrismaClient;
-
-  constructor() {
-    const adapter = new PrismaBetterSqlite3({
-      url: 'file:./dev.db',
-    });
-    this.prisma = new PrismaClient({ adapter });
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async getPaymentAdapter(countryCode: string): Promise<PaymentProvider> {
     const config = await this.prisma.regionConfig.findUnique({

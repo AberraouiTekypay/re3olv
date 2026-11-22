@@ -56,4 +56,6 @@ Do not enable real borrower or institutional data until Sprints 1 and 2 are comp
 
 ## Current progress
 
-Sprint 1 implementation is in progress: OIDC-backed institutional roles, organization-scoped case operations, explicit borrower-token routes, hashed seven-day borrower tokens, and aligned portal endpoints are in place. Sprint 1 still needs real OIDC configuration, provisioned user mappings, database migration deployment, and acceptance checks before it can be marked complete.
+Sprint 1 implementation is in place: OIDC-backed institutional roles, organization-scoped case operations, explicit borrower-token routes, hashed seven-day borrower tokens, and aligned portal endpoints. It still needs real OIDC configuration, provisioned user mappings, migration deployment, and acceptance checks.
+
+Sprint 2 implementation is in place in code: the API uses a shared PostgreSQL Prisma client, the canonical migration history is a fresh PostgreSQL baseline, the old SQLite migrations are archived, and encryption now uses an explicit versioned keyring. A PostgreSQL target has not been provisioned or migrated, no SQLite data has been exported, and backups/restores have not been exercised. Do not mark Sprint 2 complete or enable real data until a target is configured, the baseline is reviewed/applied, any required data is migrated, and backup restoration is rehearsed.

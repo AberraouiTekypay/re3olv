@@ -9,9 +9,10 @@ import { IntegrationOrchestratorService } from './integration-orchestrator.servi
 import { EncryptionService } from './encryption.service.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { BorrowerTokenGuard } from './borrower-token.guard.js';
+import { DatabaseModule } from '../database/database.module.js';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, DatabaseModule],
   providers: [
     CasesService,
     AdvocacyBrainService,

@@ -1,20 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClient } from '../../generated/prisma/client.js';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { randomBytes, timingSafeEqual } from 'crypto';
 import { getWebAppUrl } from '../common/public-url.js';
 import { hashMagicToken } from './magic-token.js';
+import { PrismaService } from '../database/prisma.service.js';
 
 @Injectable()
 export class LinkService {
-  private prisma: PrismaClient;
-
-  constructor() {
-    const adapter = new PrismaBetterSqlite3({
-      url: 'file:./dev.db',
-    });
-    this.prisma = new PrismaClient({ adapter });
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async generateMagicLink(caseId: string, organizationId: string) {
     const token = randomBytes(32).toString('hex');
